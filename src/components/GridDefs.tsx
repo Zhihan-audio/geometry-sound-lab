@@ -1,4 +1,4 @@
-// SVG 坐标网格（viewBox 0..100，y 轴翻转由调用方处理）
+// SVG coordinate grid (viewBox 0..100; the y-axis flip is handled by the caller)
 export const S = 100;
 
 export function toSvgX(x: number): number {

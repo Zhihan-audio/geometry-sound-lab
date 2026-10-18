@@ -1,4 +1,4 @@
-// 图形遍历：路径提取、起点选择、顺/逆时针排序，生成播放用的“腿”序列
+// Shape traversal: path extraction, start-point selection, clockwise/counterclockwise ordering, building the "leg" sequence for playback
 import type {
   GeometryPoint,
   GeometryShape,
@@ -14,14 +14,14 @@ export interface TraversalLeg {
 }
 
 export interface TraversalPath {
-  pointIds: string[]; // 有序顶点；闭合路径不重复起点
+  pointIds: string[]; // ordered vertices; a closed path does not repeat its start
   closed: boolean;
 }
 
 export interface TraversalPlan {
   paths: TraversalPath[];
   legs: TraversalLeg[];
-  /** 每条路径第一条腿在 legs 中的下标 */
+  /** Index into legs of each path's first leg */
   pathStartLegIndex: number[];
 }
 
@@ -32,7 +32,7 @@ export interface TraversalOptions {
 
 const XY_EPS = 1e-9;
 
-/** 按 order 把线段串成一条或多条连续路径 */
+/** Chain segments by order into one or more continuous paths */
 export function extractRawPaths(shape: GeometryShape): TraversalPath[] {
   const segs = [...shape.segments].sort((a, b) => a.order - b.order);
   const paths: TraversalPath[] = [];
@@ -76,7 +76,7 @@ export function signedArea(points: { x: number; y: number }[]): number {
   return sum / 2;
 }
 
-/** 开放路径：优先最左端点；横坐标相同取较低端点；教师指定起点优先 */
+/** Open path: prefer the leftmost endpoint; same x takes the lower one; a teacher-specified start wins */
 function orientOpenPath(shape: GeometryShape, ids: string[], startPointId?: string): string[] {
   const first = ids[0];
   const last = ids[ids.length - 1];
@@ -90,7 +90,7 @@ function orientOpenPath(shape: GeometryShape, ids: string[], startPointId?: stri
   return startAtFirst ? ids : [...ids].reverse();
 }
 
-/** 闭合路径：调整为目标方向，并旋转到起点（最左顶点，横坐标相同取较高顶点） */
+/** Closed path: adjust to the target direction and rotate to the start (leftmost vertex; same x takes the higher one) */
 function orientClosedPath(
   shape: GeometryShape,
   ids: string[],
@@ -126,7 +126,7 @@ export function buildTraversal(shape: GeometryShape, options: TraversalOptions =
   const direction = options.direction ?? shape.playbackDirection ?? 'forward';
   const startPointId = options.startPointId ?? shape.startPointId;
 
-  // 建立“两个端点 → 线段 id”的查找表（正反两个方向）
+  // Build an "endpoint pair → segment id" lookup table (both directions)
   const segLookup = new Map<string, string>();
   for (const seg of shape.segments) {
     segLookup.set(`${seg.startPointId}|${seg.endPointId}`, seg.id);
@@ -189,7 +189,7 @@ export function shapeStats(shape: GeometryShape): ShapeStats {
   };
 }
 
-/** 闭合图形验证：所有路径是否都真正闭合 */
+/** Closure check: whether every path is truly closed */
 export function checkClosure(shape: GeometryShape): boolean {
   const raw = extractRawPaths(shape);
   return raw.length > 0 && raw.every((p) => p.closed);

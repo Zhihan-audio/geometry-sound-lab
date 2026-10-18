@@ -1,4 +1,4 @@
-// 全局状态管理：React Context + useReducer
+// Global state management: React Context + useReducer
 import {
   createContext,
   useContext,
@@ -119,7 +119,7 @@ function sanitizeNumber(v: unknown, fallback: number, min: number, max: number):
   return Math.max(min, Math.min(max, v));
 }
 
-/** 从 localStorage 恢复设置，字段级校验，损坏时回退默认值 */
+/** Restore settings from localStorage with per-field validation; corrupt values fall back to defaults */
 function restoreSettings(): AppSettings {
   const patch = loadSettingsPatch();
   const s: AppSettings = { ...defaultSettings };
@@ -130,8 +130,8 @@ function restoreSettings(): AppSettings {
     s.minMidi = defaultSettings.minMidi;
     s.maxMidi = defaultSettings.maxMidi;
   }
-  // 音高默认改为音阶量化（听到的是音符变化而非连续频率滑动）；
-  // 旧设置一次性迁移到新默认，之后仍尊重用户自己的选择
+  // Pitch now defaults to scale quantization (you hear note changes rather than a continuous frequency glide);
+  // old settings migrate to the new default once, after which the user's own choice is respected
   if (loadPitchMigrated()) {
     if (patch.pitchMode === 'continuous' || patch.pitchMode === 'quantized') s.pitchMode = patch.pitchMode;
   } else {
@@ -163,7 +163,7 @@ function restoreSettings(): AppSettings {
   ] as const) {
     if (typeof patch[key] === 'boolean') s[key] = patch[key] as boolean;
   }
-  // 语音辅助设置：旧版设置（没有 speakFocus 字段）迁移为默认开启
+  // Speech-assist settings: legacy settings (without a speakFocus field) migrate to enabled by default
   if (typeof patch.speakFocus === 'boolean') {
     s.speakFocus = patch.speakFocus;
     if (typeof patch.speechEnabled === 'boolean') s.speechEnabled = patch.speechEnabled;
@@ -173,7 +173,7 @@ function restoreSettings(): AppSettings {
   if (typeof patch.speechVoiceURI === 'string' && patch.speechVoiceURI) {
     s.speechVoiceURI = patch.speechVoiceURI;
   }
-  // 语音默认 1.5 倍速（盲人用户听力习惯更快）；旧设置一次性迁移，之后尊重用户选择
+  // Speech defaults to 1.5x speed (blind users are used to faster speech); old settings migrate once, then the user's choice is respected
   if (loadRateMigrated()) {
     s.speechRate = sanitizeNumber(patch.speechRate, s.speechRate, 0.5, 3);
   } else {
@@ -183,7 +183,7 @@ function restoreSettings(): AppSettings {
   if (patch.playDirection === 'clockwise' || patch.playDirection === 'counterclockwise') {
     s.playDirection = patch.playDirection;
   }
-  // 应用启动永远是英文界面；语言切换只在当次会话内生效
+  // The app always starts with the English UI; a language switch lasts only for the current session
   s.locale = 'en';
   if (
     patch.performanceScale === 'dorian' ||
@@ -274,7 +274,7 @@ const StoreContext = createContext<StoreValue | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, initialState);
 
-  // 设置变化时持久化（含最近选择的图形）
+  // Persist when settings change (including the most recently selected shape)
   useEffect(() => {
     const toSave: Record<string, unknown> = {};
     for (const key of SETTINGS_KEYS) toSave[key] = state[key];
@@ -293,7 +293,7 @@ export function useStore(): StoreValue {
   return ctx;
 }
 
-/** 根据 id 在内置图形库和自定义图形中查找 */
+/** Look up a shape by id in the built-in library and the custom shapes */
 export function resolveShape(state: AppState): GeometryShape | null {
   if (!state.selectedShapeId) return null;
   return (

@@ -1,4 +1,4 @@
-// 全局动作上下文：组件通过 useActions() 调用播放、导航、设置等操作
+// Global actions context: components call playback, navigation, settings etc. via useActions()
 import { createContext, useContext } from 'react';
 import type { GeometryShape } from '../geometry/geometryTypes';
 import type { CueType } from '../audio/CueSoundEngine';

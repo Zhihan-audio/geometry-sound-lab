@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { validateShapeData } from './shapeValidation';
 import { getLibraryShape } from './shapeLibrary';
 
-describe('图形数据校验', () => {
-  it('内置图形序列化后可以通过校验（导出导入往返）', () => {
+describe('shape data validation', () => {
+  it('built-in shapes pass validation after serialization (export/import round trip)', () => {
     const original = getLibraryShape('poly-triangle')!;
     const json = JSON.parse(JSON.stringify(original));
     const result = validateShapeData(json);
@@ -12,18 +12,18 @@ describe('图形数据校验', () => {
     expect(result.shape!.segments).toHaveLength(3);
   });
 
-  it('非对象数据被拒绝', () => {
+  it('non-object data is rejected', () => {
     expect(validateShapeData(null).ok).toBe(false);
     expect(validateShapeData('hello').ok).toBe(false);
     expect(validateShapeData([1, 2]).ok).toBe(false);
   });
 
-  it('缺少 points 或 segments 被拒绝', () => {
+  it('missing points or segments is rejected', () => {
     expect(validateShapeData({}).ok).toBe(false);
     expect(validateShapeData({ points: [] }).ok).toBe(false);
   });
 
-  it('线段引用不存在的顶点被拒绝', () => {
+  it('a segment referencing a missing vertex is rejected', () => {
     const result = validateShapeData({
       points: [{ id: 'a', x: 0.1, y: 0.1 }],
       segments: [{ id: 's', startPointId: 'a', endPointId: 'missing', order: 0 }],
@@ -32,7 +32,7 @@ describe('图形数据校验', () => {
     expect(result.errors.join()).toContain('references a missing point');
   });
 
-  it('顶点 id 重复被拒绝', () => {
+  it('duplicate point ids are rejected', () => {
     const result = validateShapeData({
       points: [
         { id: 'a', x: 0.1, y: 0.1 },
@@ -43,7 +43,7 @@ describe('图形数据校验', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('超出范围的坐标被限制在 0..1', () => {
+  it('out-of-range coordinates are clamped to 0..1', () => {
     const result = validateShapeData({
       points: [{ id: 'a', x: -0.5, y: 1.5 }],
       segments: [],
@@ -53,7 +53,7 @@ describe('图形数据校验', () => {
     expect(result.shape!.points[0].y).toBe(1);
   });
 
-  it('无效播放方向回退为 forward', () => {
+  it('an invalid playback direction falls back to forward', () => {
     const result = validateShapeData({
       points: [{ id: 'a', x: 0.5, y: 0.5 }],
       segments: [],

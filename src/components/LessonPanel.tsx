@@ -384,7 +384,7 @@ export default function LessonPanel() {
   const questionStartRef = useRef(0);
   const playedOnceRef = useRef(false);
 
-  /** 把题干、全部选项和按键说明组成一段完整语音（盲人用户的全流程指引） */
+  /** Combine the prompt, every option, and key hints into one spoken message (full guidance for blind users) */
   const questionSpeech = useCallback((q: Question, isNew: boolean) => {
     const opts = q.options
       .map((o, i) => tl(`Choice ${i + 1}: ${o}`, `选项 ${i + 1}：${o}`))
@@ -467,7 +467,7 @@ export default function LessonPanel() {
     [question, picked, stage, actions],
   );
 
-  // 练习页全键盘操作：空格/R 听声音，数字作答，P 重听题目，H 听讲解，Enter 下一题
+  // Full keyboard control on the practice page: Space/R = hear sound, digits = answer, P = repeat question, H = explanation, Enter = next
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (state.helpOpen || state.tutorialActive || state.welcomeOpen) return;
@@ -475,7 +475,7 @@ export default function LessonPanel() {
       const target = e.target instanceof HTMLElement ? e.target : null;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      // 焦点在按钮上时，空格/回车交给按钮本身
+      // When a button has focus, leave Space/Enter to the button itself
       const onButton = !!target && target.closest('button, a') !== null;
       if (!question) return;
 

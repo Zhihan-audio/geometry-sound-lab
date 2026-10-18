@@ -10,7 +10,7 @@ import { t } from '../i18n';
 export default function ShapeLibraryPanel() {
   const { state } = useStore();
   const actions = useActions();
-  // 挂在整个面板上：焦点查找必须覆盖所有分组，不能只在第一组里找
+  // Attached to the whole panel: focus lookup must cover every group, not just the first one
   const listRef = useRef<HTMLElement>(null);
 
   const groups = useMemo(() => {
@@ -66,10 +66,10 @@ export default function ShapeLibraryPanel() {
         case ' ': {
           e.preventDefault();
           const target = e.target as HTMLElement;
-          // 焦点元素上的图形优先；取不到就用当前选中的图形，确保 Space 永远作用于刚听到的那个
+          // Prefer the shape on the focused element; fall back to the current selection so Space always acts on the one just heard
           const id = target.dataset.shapeId ?? state.selectedShapeId ?? undefined;
           if (id) actions.selectShape(id);
-          // 只有在图形播放页才顺带播放；手势演奏页由手的动作发声
+          // Auto-play only on the shape playback view; the hand-performance view makes sound from hand motion
           if (state.view === 'play') actions.play();
           break;
         }

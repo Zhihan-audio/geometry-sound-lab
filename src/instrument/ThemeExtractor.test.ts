@@ -31,8 +31,8 @@ const TRIANGLE: [number, number][] = [
 
 const OPTS = { scale: 'dorian' as const };
 
-describe('主题提取', () => {
-  it('三角形 → 8–12 个音符，闭合，识别为 triangle-like', () => {
+describe('theme extraction', () => {
+  it('triangle → 8–12 notes, closed, recognized as triangle-like', () => {
     const theme = extractTheme(walk(TRIANGLE), OPTS)!;
     expect(theme).not.toBeNull();
     const notes = theme.pitches.filter((p) => p !== REST);
@@ -42,7 +42,7 @@ describe('主题提取', () => {
     expect(theme.geometryType).toBe('triangle-like');
   });
 
-  it('三角形的旋律轮廓：先升后降（低→高→低）', () => {
+  it('triangle melodic contour: rise then fall (low→high→low)', () => {
     const theme = extractTheme(walk(TRIANGLE), OPTS)!;
     const notes = theme.pitches.filter((p) => p !== REST);
     const peak = Math.max(...notes);
@@ -55,7 +55,7 @@ describe('主题提取', () => {
     expect(theme.contour).toContain(-1);
   });
 
-  it('所有音符都在音阶内且在 C3..C6 范围', () => {
+  it('all notes are in scale and within the C3..C6 range', () => {
     const theme = extractTheme(walk(TRIANGLE), OPTS)!;
     for (const p of theme.pitches) {
       if (p === REST) continue;
@@ -65,7 +65,7 @@ describe('主题提取', () => {
     }
   });
 
-  it('几何决定音乐身份：快画慢画同一三角形 → 相同的音高与节奏、相同的 seed', () => {
+  it('geometry defines musical identity: the same triangle fast or slow → same pitches, rhythm and seed', () => {
     const fast = extractTheme(walk(TRIANGLE, 0.01, 4), OPTS)!;
     const slow = extractTheme(walk(TRIANGLE, 0.01, 40), OPTS)!;
     expect(fast.pitches).toEqual(slow.pitches);
@@ -74,14 +74,14 @@ describe('主题提取', () => {
     expect(fast.geometryType).toBe(slow.geometryType);
   });
 
-  it('手势决定表达：快画的力度整体高于慢画', () => {
+  it('gesture defines expression: fast drawing yields higher overall velocities than slow', () => {
     const fast = extractTheme(walk(TRIANGLE, 0.01, 4), OPTS)!;
     const slow = extractTheme(walk(TRIANGLE, 0.01, 40), OPTS)!;
     const avg = (v: number[]) => v.reduce((a, b) => a + b, 0) / v.length;
     expect(avg(fast.velocities)).toBeGreaterThan(avg(slow.velocities));
   });
 
-  it('不同几何 → 不同 seed', () => {
+  it('different geometry → different seed', () => {
     const tri = extractTheme(walk(TRIANGLE), OPTS)!;
     const line = extractTheme(
       walk([
@@ -93,12 +93,12 @@ describe('主题提取', () => {
     expect(tri.seed).not.toBe(line.seed);
   });
 
-  it('顶点带重音标记', () => {
+  it('corners carry accent marks', () => {
     const theme = extractTheme(walk(TRIANGLE), OPTS)!;
     expect(theme.accents.filter(Boolean).length).toBeGreaterThanOrEqual(2);
   });
 
-  it('上升直线 → 音高单调不降（音阶跑句）', () => {
+  it('ascending line → pitches never descend (a scale run)', () => {
     const theme = extractTheme(
       walk([
         [0.1, 0.1],
@@ -114,7 +114,7 @@ describe('主题提取', () => {
     expect(theme.geometryType).toBe('line-like');
   });
 
-  it('手势中的明显停顿 → 休止符', () => {
+  it('a clear pause in the gesture → a rest', () => {
     const part1 = walk(
       [
         [0.1, 0.3],
@@ -132,13 +132,13 @@ describe('主题提取', () => {
       ],
       0.01,
       10,
-      t1 + 1500, // 停顿 1.5 秒
+      t1 + 1500, // a 1.5-second pause
     );
     const theme = extractTheme([...part1, ...part2], OPTS)!;
     expect(theme.pitches).toContain(REST);
   });
 
-  it('太短的轨迹返回 null', () => {
+  it('a too-short trace returns null', () => {
     expect(
       extractTheme(
         [
@@ -150,7 +150,7 @@ describe('主题提取', () => {
     ).toBeNull();
   });
 
-  it('节奏已量化到节拍网格', () => {
+  it('rhythm is quantized to the beat grid', () => {
     const theme = extractTheme(walk(TRIANGLE), OPTS)!;
     for (const d of theme.durations) {
       expect([0.25, 0.375, 0.5, 0.75, 1, 1.5, 2]).toContain(d);
@@ -158,7 +158,7 @@ describe('主题提取', () => {
     expect(themeBeats(theme)).toBeGreaterThan(4);
   });
 
-  it('圆 → circle-like，无重音', () => {
+  it('circle → circle-like, no accents', () => {
     const circle: GestureSample[] = Array.from({ length: 129 }, (_, i) => {
       const a = (2 * Math.PI * i) / 128;
       return { x: 0.5 + 0.3 * Math.cos(a), y: 0.5 + 0.3 * Math.sin(a), t: i * 12 };

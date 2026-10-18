@@ -1,4 +1,4 @@
-// 斜率分析：斜率计算、分类与两线比较
+// Slope analysis: slope computation, classification, and two-line comparison
 import type { Vec2 } from './geometryTypes';
 
 export const EPS = 1e-9;
@@ -7,7 +7,7 @@ export function segmentLength(a: Vec2, b: Vec2): number {
   return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
 }
 
-/** 斜率；竖直线返回 null（斜率不存在） */
+/** Slope; returns null for a vertical line (slope undefined) */
 export function slopeOf(a: Vec2, b: Vec2): number | null {
   const dx = b.x - a.x;
   if (Math.abs(dx) < EPS) return null;
@@ -22,7 +22,7 @@ export type SlopeClass =
   | 'gentle-down'
   | 'steep-down';
 
-/** |斜率| >= 1 视为陡，否则为缓 */
+/** |slope| >= 1 counts as steep, otherwise gentle */
 export function classifySlope(a: Vec2, b: Vec2): SlopeClass {
   const m = slopeOf(a, b);
   if (m === null) return 'vertical';

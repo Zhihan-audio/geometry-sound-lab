@@ -13,7 +13,7 @@ export default function CanvasView() {
   const shape = resolveShape(state);
   const mouseCellRef = useRef<string | null>(null);
 
-  // 鼠标在坐标系里每跨过一条网格线（0.1）就语音播报一次当前坐标
+  // Each time the mouse crosses a grid line (0.1) on the coordinate plane, speak the current coordinates
   const onPointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();

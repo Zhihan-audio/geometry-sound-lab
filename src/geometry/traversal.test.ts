@@ -18,11 +18,11 @@ function line(id: string, x1: number, y1: number, x2: number, y2: number): Geome
   };
 }
 
-/** 逆时针作图的正方形：左下 → 右下 → 右上 → 左上 */
+/** Square drawn counterclockwise: bottom-left → bottom-right → top-right → top-left */
 function square(): GeometryShape {
   return {
     id: 'sq',
-    name: '正方形',
+    name: 'Square',
     type: 'polygon',
     points: [
       { id: 'bl', x: 0.2, y: 0.2 },
@@ -41,57 +41,57 @@ function square(): GeometryShape {
   };
 }
 
-describe('开放线条起点选择', () => {
-  it('从最左端点开始（作图方向相反也纠正）', () => {
-    const shape = line('l1', 0.9, 0.5, 0.1, 0.5); // 从右往左作图
+describe('open-line start-point selection', () => {
+  it('starts at the leftmost endpoint (corrects a reversed drawing direction)', () => {
+    const shape = line('l1', 0.9, 0.5, 0.1, 0.5); // drawn right-to-left
     const plan = buildTraversal(shape);
     expect(plan.legs[0].from.x).toBeCloseTo(0.1);
     expect(plan.legs[0].to.x).toBeCloseTo(0.9);
   });
 
-  it('竖直线从较低端点开始', () => {
-    const shape = line('l2', 0.5, 0.9, 0.5, 0.1); // 从上往下作图
+  it('a vertical line starts at the lower endpoint', () => {
+    const shape = line('l2', 0.5, 0.9, 0.5, 0.1); // drawn top-to-bottom
     const plan = buildTraversal(shape);
     expect(plan.legs[0].from.y).toBeCloseTo(0.1);
     expect(plan.legs[0].to.y).toBeCloseTo(0.9);
   });
 
-  it('教师指定起点优先', () => {
+  it('a teacher-specified start point wins', () => {
     const shape = line('l3', 0.1, 0.5, 0.9, 0.5);
     const plan = buildTraversal(shape, { startPointId: 'b' });
     expect(plan.legs[0].from.x).toBeCloseTo(0.9);
   });
 });
 
-describe('闭合图形起点与方向', () => {
-  it('起点为最左顶点，横坐标相同取较高顶点', () => {
+describe('closed-shape start point and direction', () => {
+  it('starts at the leftmost vertex; same x takes the higher one', () => {
     const plan = buildTraversal(square(), { direction: 'clockwise' });
-    // 最左的两个顶点是 bl(0.2,0.2) 和 tl(0.2,0.8)，取较高的 tl
+    // the leftmost vertices are bl(0.2,0.2) and tl(0.2,0.8); the higher tl wins
     expect(plan.legs[0].from.id).toBe('tl');
   });
 
-  it('顺时针播放顺序正确（左上 → 右上 → 右下 → 左下）', () => {
+  it('clockwise playback order is correct (top-left → top-right → bottom-right → bottom-left)', () => {
     const plan = buildTraversal(square(), { direction: 'clockwise' });
     const ids = plan.legs.map((l) => l.from.id);
     expect(ids).toEqual(['tl', 'tr', 'br', 'bl']);
-    expect(plan.legs[3].to.id).toBe('tl'); // 回到起点
+    expect(plan.legs[3].to.id).toBe('tl'); // back to the start
   });
 
-  it('逆时针播放顺序正确（左上 → 左下 → 右下 → 右上）', () => {
+  it('counterclockwise playback order is correct (top-left → bottom-left → bottom-right → top-right)', () => {
     const plan = buildTraversal(square(), { direction: 'counterclockwise' });
     const ids = plan.legs.map((l) => l.from.id);
     expect(ids).toEqual(['tl', 'bl', 'br', 'tr']);
   });
 
-  it('闭合路径腿数等于顶点数', () => {
+  it('a closed path has as many legs as vertices', () => {
     const plan = buildTraversal(square());
     expect(plan.legs).toHaveLength(4);
     expect(plan.paths[0].closed).toBe(true);
   });
 });
 
-describe('多路径图形', () => {
-  it('十字图形拆分为两条路径', () => {
+describe('multi-path shapes', () => {
+  it('the cross shape splits into two paths', () => {
     const shape = getLibraryShape('line-cross')!;
     const plan = buildTraversal(shape);
     expect(plan.paths).toHaveLength(2);
@@ -99,14 +99,14 @@ describe('多路径图形', () => {
   });
 });
 
-describe('闭合验证与统计', () => {
-  it('闭合图形验证正确', () => {
+describe('closure check and stats', () => {
+  it('closure is detected correctly', () => {
     expect(checkClosure(square())).toBe(true);
     expect(checkClosure(getLibraryShape('line-polyline')!)).toBe(false);
     expect(checkClosure(getLibraryShape('curve-circle')!)).toBe(true);
   });
 
-  it('顶点数量和边数统计正确', () => {
+  it('vertex and edge counts are correct', () => {
     const stats = shapeStats(square());
     expect(stats.vertexCount).toBe(4);
     expect(stats.edgeCount).toBe(4);
@@ -114,13 +114,13 @@ describe('闭合验证与统计', () => {
     expect(stats.totalLength).toBeCloseTo(2.4);
   });
 
-  it('圆形采样点不计入顶点数量', () => {
+  it('circle sample points are not counted as vertices', () => {
     const stats = shapeStats(getLibraryShape('curve-circle')!);
     expect(stats.vertexCount).toBe(0);
     expect(stats.closed).toBe(true);
   });
 
-  it('单点图形没有路径', () => {
+  it('a single-point shape has no paths', () => {
     const shape = getLibraryShape('point-single')!;
     expect(extractRawPaths(shape)).toHaveLength(0);
     const plan = buildTraversal(shape);

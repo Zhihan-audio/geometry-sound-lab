@@ -1,4 +1,4 @@
-// 主动探索引擎：键盘控制声音指针，在坐标空间中探索图形
+// Active exploration engine: a keyboard-driven sound pointer for exploring shapes in coordinate space
 import type { GeometryShape, Vec2 } from '../geometry/geometryTypes';
 import { findIntersections } from '../geometry/intersections';
 import { nearestSegmentOnShape } from '../geometry/nearestPoint';
@@ -8,7 +8,7 @@ import type { CueSoundEngine } from './CueSoundEngine';
 import { mapPosition, type PitchSettings } from './SonificationMapper';
 import { BASE_MS_PER_UNIT } from './PlaybackScheduler';
 
-export const NEAR_THRESHOLD = 0.04; // 距线条多近算“在线上”
+export const NEAR_THRESHOLD = 0.04; // how close to a line counts as "on the line"
 export const SNAP_RADIUS = 0.05;
 export const VERTEX_RADIUS = 0.035;
 
@@ -132,7 +132,7 @@ export class ExplorationEngine {
     };
   }
 
-  /** 自动沿最近的线段前进（F 键），到达线段终点后停止 */
+  /** Auto-advance along the nearest segment (F key), stopping at the segment's endpoint */
   autoFollow(): boolean {
     if (!this.active || !this.shape) return false;
     const near = nearestSegmentOnShape(this.shape, this.pos);
@@ -189,7 +189,7 @@ export class ExplorationEngine {
       this.onLine = on;
     }
 
-    // 顶点接近检测（每个顶点只在进入范围时提示一次）
+    // Vertex proximity check (each vertex cues only once, on entering its range)
     const vp = this.shape.points.find(
       (p) => p.cue !== false && Math.hypot(p.x - this.pos.x, p.y - this.pos.y) <= VERTEX_RADIUS,
     );
@@ -199,7 +199,7 @@ export class ExplorationEngine {
     }
     this.lastVertexId = vp?.id ?? null;
 
-    // 交点接近检测
+    // Intersection proximity check
     const ii = this.intersections.findIndex(
       (p) => Math.hypot(p.x - this.pos.x, p.y - this.pos.y) <= VERTEX_RADIUS,
     );

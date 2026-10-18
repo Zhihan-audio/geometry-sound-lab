@@ -23,8 +23,8 @@ const THEME: MusicalTheme = {
   closed: true,
 };
 
-describe('作品结构计划', () => {
-  it('七个段落按 INTRO→THEME→A→B→DEV→RETURN→CODA 排列', () => {
+describe('composition structure plan', () => {
+  it('seven sections ordered INTRO→THEME→A→B→DEV→RETURN→CODA', () => {
     const plan = buildCompositionPlan(THEME);
     expect(plan.sections.map((s) => s.section)).toEqual([
       'intro',
@@ -35,26 +35,26 @@ describe('作品结构计划', () => {
       'return',
       'coda',
     ]);
-    // 段落时间轴单调递增
+    // section timeline is strictly increasing
     for (let i = 1; i < plan.sections.length; i++) {
       expect(plan.sections[i].startBeat).toBeGreaterThan(plan.sections[i - 1].startBeat);
     }
   });
 
-  it('总时长在 30–60 秒之间', () => {
+  it('total duration is between 30 and 60 seconds', () => {
     const plan = buildCompositionPlan(THEME);
     expect(plan.totalSeconds).toBeGreaterThanOrEqual(30);
     expect(plan.totalSeconds).toBeLessThanOrEqual(60);
   });
 
-  it('THEME 段落逐音等于原始主题', () => {
+  it('THEME section equals the original theme note for note', () => {
     const plan = buildCompositionPlan(THEME);
     const themeSection = plan.sections.find((s) => s.section === 'theme')!;
     const notes = THEME.pitches.filter((p) => p !== REST);
     expect(themeSection.notes.map((n) => n.midi)).toEqual(notes);
   });
 
-  it('RETURN 段落音高与主题一致但更柔和（听众重新认出几何）', () => {
+  it('RETURN section keeps the theme pitches but softer (listener recognizes the geometry again)', () => {
     const plan = buildCompositionPlan(THEME);
     const theme = plan.sections.find((s) => s.section === 'theme')!;
     const ret = plan.sections.find((s) => s.section === 'return')!;
@@ -63,14 +63,14 @@ describe('作品结构计划', () => {
     expect(avg(ret.notes)).toBeLessThan(avg(theme.notes));
   });
 
-  it('INTRO 与 CODA 有主音持续低音，其他段落没有', () => {
+  it('INTRO and CODA carry the tonic drone, other sections do not', () => {
     const plan = buildCompositionPlan(THEME);
     for (const s of plan.sections) {
       expect(s.drone).toBe(s.section === 'intro' || s.section === 'coda');
     }
   });
 
-  it('CODA 以主和弦解决收束', () => {
+  it('CODA resolves and closes on the tonic chord', () => {
     const plan = buildCompositionPlan(THEME);
     const coda = plan.sections.find((s) => s.section === 'coda')!;
     const finalNotes = coda.notes.filter((n) => n.beat >= 3).map((n) => n.midi);
@@ -79,13 +79,13 @@ describe('作品结构计划', () => {
     expect(finalNotes).toContain(THEME.tonicMidi + plan.third);
   });
 
-  it('确定性：同一主题两次生成完全相同的计划', () => {
+  it('determinism: the same theme generates the identical plan twice', () => {
     const a = buildCompositionPlan(THEME);
     const b = buildCompositionPlan(THEME);
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
-  it('DEVELOPMENT 密度最高且被限制在安全长度内', () => {
+  it('DEVELOPMENT is the densest section and capped to a safe length', () => {
     const plan = buildCompositionPlan(THEME);
     const dev = plan.sections.find((s) => s.section === 'development')!;
     const counts = plan.sections.map((s) => s.notes.length);
@@ -93,7 +93,7 @@ describe('作品结构计划', () => {
     expect(dev.beats).toBeLessThanOrEqual(25);
   });
 
-  it('声像保持克制（±0.5 内）', () => {
+  it('panning stays restrained (within ±0.5)', () => {
     const plan = buildCompositionPlan(THEME);
     for (const s of plan.sections) {
       for (const n of s.notes) {
@@ -103,7 +103,7 @@ describe('作品结构计划', () => {
   });
 });
 
-describe('作品演出调度', () => {
+describe('composition performance scheduling', () => {
   class StubInstrument implements InstrumentLike {
     scheduled: NoteOpts[] = [];
     droneStarts = 0;
@@ -133,7 +133,7 @@ describe('作品演出调度', () => {
     vi.useRealTimers();
   });
 
-  it('play 一次性调度所有音符，段落事件按顺序触发，最后 finished', () => {
+  it('play schedules all notes up front, section events fire in order, then finished', () => {
     const inst = new StubInstrument();
     const perf = new CompositionPerformer(inst);
     const events: CompositionEvent[] = [];
@@ -161,7 +161,7 @@ describe('作品演出调度', () => {
     expect(inst.droneStarts).toBe(2); // intro + coda
   });
 
-  it('stop 取消调度并广播 stopped', () => {
+  it('stop cancels scheduled notes and broadcasts stopped', () => {
     const inst = new StubInstrument();
     const perf = new CompositionPerformer(inst);
     const events: CompositionEvent[] = [];
@@ -172,7 +172,7 @@ describe('作品演出调度', () => {
     expect(inst.cancelled).toBe(1);
     expect(perf.isPlaying).toBe(false);
     expect(events.some((e) => e.type === 'stopped')).toBe(true);
-    // 停止后不再有事件
+    // no further events after stop
     const count = events.length;
     vi.advanceTimersByTime(70000);
     expect(events.length).toBe(count);

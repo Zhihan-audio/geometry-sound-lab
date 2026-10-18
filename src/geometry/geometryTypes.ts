@@ -1,4 +1,4 @@
-// 几何数据结构定义
+// Geometry data structure definitions
 
 export interface Vec2 {
   x: number;
@@ -7,9 +7,9 @@ export interface Vec2 {
 
 export interface GeometryPoint {
   id: string;
-  x: number; // 0..1，0 = 最左
-  y: number; // 0..1，0 = 最下
-  /** 是否在该点触发顶点提示音；曲线采样点为 false，默认 true */
+  x: number; // 0..1, 0 = leftmost
+  y: number; // 0..1, 0 = bottom
+  /** Whether this point triggers the vertex cue sound; false for curve sample points, default true */
   cue?: boolean;
 }
 
@@ -31,8 +31,8 @@ export interface GeometryShape {
   closed: boolean;
   startPointId?: string;
   playbackDirection: PlaybackDirection;
-  /** 平滑曲线（圆、抛物线等）：不做逐点顶点停顿，时长按整条路径计算 */
+  /** Smooth curve (circle, parabola, etc.): no per-vertex pauses; duration spans the whole path */
   smooth?: boolean;
-  /** 面向屏幕阅读器的补充描述 */
+  /** Supplementary description for screen readers */
   description?: string;
 }

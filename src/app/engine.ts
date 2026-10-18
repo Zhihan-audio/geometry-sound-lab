@@ -1,4 +1,4 @@
-// 全局共享的声音引擎单例：整个程序只创建一个 AudioContext
+// Globally shared audio engine singleton: the whole app creates only one AudioContext
 import { AudioEngine } from '../audio/AudioEngine';
 import { CueSoundEngine } from '../audio/CueSoundEngine';
 import { PlaybackScheduler, type SchedulerSettings } from '../audio/PlaybackScheduler';
@@ -12,7 +12,7 @@ export interface EngineBundle {
   exploration: ExplorationEngine;
 }
 
-/** React 每次渲染同步到这里，引擎通过 getter 实时读取最新设置 */
+/** React syncs here on every render; engines read the latest settings live via getters */
 export const engineSettings: { current: AppSettings } = {
   current: {
     playbackSpeed: 1,

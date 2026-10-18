@@ -1,4 +1,4 @@
-// 开发模式：启动 Vite 开发服务器 + 编译 Electron 主进程 + 启动 Electron
+// Dev mode: start the Vite dev server + compile the Electron main process + launch Electron
 import { spawn } from 'node:child_process';
 import { build } from 'esbuild';
 import { createServer } from 'vite';
@@ -7,7 +7,7 @@ import electronPath from 'electron';
 const server = await createServer({ configFile: 'vite.config.ts' });
 await server.listen();
 const url = server.resolvedUrls?.local?.[0] ?? 'http://localhost:5173/';
-console.log(`[dev] Vite 开发服务器已启动: ${url}`);
+console.log(`[dev] Vite dev server running at: ${url}`);
 
 await build({
   entryPoints: ['electron/main.ts', 'electron/preload.ts'],

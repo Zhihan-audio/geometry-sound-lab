@@ -1,4 +1,4 @@
-// 提示音引擎：起点、终点、顶点、交点、闭合、错误、答题对错
+// Cue sound engine: start, end, vertex, intersection, closure, error, quiz right/wrong
 import type { AudioEngine } from './AudioEngine';
 
 export type CueType =
@@ -24,7 +24,7 @@ export const CUE_LABELS: Record<CueType, string> = {
 
 interface Blip {
   freq: number;
-  at: number; // 秒，相对当前
+  at: number; // seconds, relative to now
   dur: number;
   type: OscillatorType;
   peak?: number;
@@ -63,59 +63,59 @@ export class CueSoundEngine {
           osc.disconnect();
           gain.disconnect();
         } catch {
-          // 已断开
+          // already disconnected
         }
       };
     }
   }
 
-  // 各提示音在音区、节奏、音色三个维度同时拉开距离，方便纯听觉区分：
-  // 错误(超低 87-110Hz) < 答错(中低 262-392) < 起止(440-880 八度) <
-  // 交点(587 锯齿双脉冲) < 闭合(523-1047 八度琶音) < 答对(784-1568 八度跳进) < 顶点(超高 2093)
+  // Cue sounds are spread apart in register, rhythm and timbre at once, so they can be told apart by ear alone:
+  // error (very low 87-110Hz) < wrong (low-mid 262-392) < start/end (440-880 octave) <
+  // intersection (587 sawtooth double pulse) < closure (523-1047 octave arpeggio) < correct (784-1568 octave leap) < vertex (very high 2093)
   private designFor(type: CueType): Blip[] {
     switch (type) {
       case 'start':
-        // 上行纯八度：准备开始
+        // Rising perfect octave: get ready to start
         return [
           { freq: 440, at: 0, dur: 0.09, type: 'sine' },
           { freq: 880, at: 0.11, dur: 0.1, type: 'sine' },
         ];
       case 'end':
-        // 下行纯八度：普通结束（与开始互为镜像）
+        // Falling perfect octave: plain ending (mirror image of the start cue)
         return [
           { freq: 880, at: 0, dur: 0.09, type: 'sine' },
           { freq: 440, at: 0.11, dur: 0.12, type: 'sine' },
         ];
       case 'vertex':
-        // 单个短促超高音点击（全部提示音中最高）
+        // Single short very-high click (the highest of all cue sounds)
         return [{ freq: 2093, at: 0, dur: 0.045, type: 'triangle', peak: 0.55 }];
       case 'intersection':
-        // 中音区锯齿波双脉冲：音区与音色都远离顶点
+        // Mid-register sawtooth double pulse: register and timbre both far from the vertex cue
         return [
           { freq: 587.33, at: 0, dur: 0.04, type: 'sawtooth', peak: 0.32 },
           { freq: 587.33, at: 0.075, dur: 0.04, type: 'sawtooth', peak: 0.32 },
         ];
       case 'closure':
-        // 三音上行琶音跨整个八度：图形闭合完成
+        // Three-note rising arpeggio across a full octave: the shape has closed
         return [
           { freq: 523.25, at: 0, dur: 0.1, type: 'sine' },
           { freq: 783.99, at: 0.1, dur: 0.1, type: 'sine' },
           { freq: 1046.5, at: 0.2, dur: 0.18, type: 'sine' },
         ];
       case 'error':
-        // 超低沉双响（全部提示音中最低）
+        // Very deep double thud (the lowest of all cue sounds)
         return [
           { freq: 110, at: 0, dur: 0.14, type: 'square', peak: 0.28 },
           { freq: 87.31, at: 0.17, dur: 0.2, type: 'square', peak: 0.28 },
         ];
       case 'correct':
-        // 明亮的上行八度跳进
+        // Bright rising octave leap
         return [
           { freq: 783.99, at: 0, dur: 0.1, type: 'triangle' },
           { freq: 1567.98, at: 0.11, dur: 0.16, type: 'triangle' },
         ];
       case 'wrong':
-        // 温和的中低音区下行纯五度
+        // Gentle falling perfect fifth in the low-mid register
         return [
           { freq: 392, at: 0, dur: 0.12, type: 'triangle', peak: 0.4 },
           { freq: 261.63, at: 0.14, dur: 0.16, type: 'triangle', peak: 0.4 },

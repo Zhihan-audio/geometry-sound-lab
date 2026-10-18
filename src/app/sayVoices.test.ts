@@ -11,8 +11,8 @@ const SAMPLE = [
   '',
 ].join('\n');
 
-describe('say -v ? 输出解析', () => {
-  it('解析出语音名称与语言（下划线转连字符）', () => {
+describe('say -v ? output parsing', () => {
+  it('parses voice names and languages (underscores become hyphens)', () => {
     const voices = parseSayVoices(SAMPLE);
     expect(voices).toContainEqual({ name: 'Alex', lang: 'en-US' });
     expect(voices).toContainEqual({ name: 'Ava (Premium)', lang: 'en-US' });
@@ -21,13 +21,13 @@ describe('say -v ? 输出解析', () => {
     expect(voices).toContainEqual({ name: 'Ting-Ting', lang: 'zh-CN' });
   });
 
-  it('忽略无法解析的行', () => {
+  it('ignores lines that cannot be parsed', () => {
     expect(parseSayVoices(SAMPLE)).toHaveLength(5);
     expect(parseSayVoices('')).toHaveLength(0);
     expect(parseSayVoices('garbage\nlines\n')).toHaveLength(0);
   });
 
-  it('带括号后缀的语音名称保持完整（用于 -v 参数）', () => {
+  it('keeps parenthesized suffixes intact in voice names (used for the -v argument)', () => {
     const ava = parseSayVoices(SAMPLE).find((v) => v.name.includes('Premium'));
     expect(ava?.name).toBe('Ava (Premium)');
   });

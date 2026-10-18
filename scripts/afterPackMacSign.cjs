@@ -1,5 +1,5 @@
-// 打包后对 .app 做 ad-hoc 签名：Apple Silicon 上无签名的二进制无法启动，
-// ad-hoc 签名让应用能在任何 Mac 上运行（首次打开仍需通过 Gatekeeper 放行）
+// Ad-hoc sign the .app after packaging: unsigned binaries will not launch on Apple Silicon;
+// an ad-hoc signature lets the app run on any Mac (first launch still needs Gatekeeper approval)
 const { execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');

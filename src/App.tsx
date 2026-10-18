@@ -197,7 +197,7 @@ export default function App() {
     }
   }, [state.selectedShapeId, state.playDirection, state.customShapes]);
 
-  /** 当前逻辑边的文字描述：平滑曲线整段算一条"曲线边"，直边照常读方向/斜率 */
+  /** Text description of the current logical edge: a smooth curve counts as one "curved edge"; straight edges read direction/slope as usual */
   const segmentText = useCallback(
     (withLength: boolean): string | null => {
       const seg = engine.scheduler.currentSegment;
@@ -228,7 +228,7 @@ export default function App() {
           if (e.status === 'paused') announce(t('Paused'));
           break;
         case 'position':
-          // 边序号由 segment 事件维护（逻辑边），position 事件只更新位置
+          // Edge index is maintained by segment events (logical edges); position events only update position
           pushPositionPatch({
             currentPosition: { x: e.x, y: e.y, pan: e.pan, midi: e.midi },
           });
@@ -366,7 +366,7 @@ export default function App() {
     }
     if (!ensureLoaded()) return;
     if (s.playbackMode === 'segment') {
-      // currentSegmentIndex 现在是逻辑边序号，调度器自己记录具体位置
+      // currentSegmentIndex is now a logical edge index; the scheduler tracks the exact position itself
       engine.scheduler.replaySegment();
       const text = segmentText(false);
       if (text) dispatch({ type: 'status-text', text });
@@ -566,7 +566,7 @@ export default function App() {
 
       const s = stateRef.current;
 
-      // 单按 Ctrl：立即停止当前语音（读屏软件的通用习惯），任何界面下都生效
+      // Plain Ctrl press: immediately stop current speech (a screen-reader convention), works on any view
       if (e.key === 'Control' && !e.repeat) {
         speech.cancel();
         return;
@@ -614,7 +614,7 @@ export default function App() {
         return;
       }
 
-      // 帮助对话框打开时全局快捷键让位（方向键由对话框用来朗读快捷键；? 仍可关闭）
+      // Global shortcuts yield while the help dialog is open (arrow keys read shortcuts in the dialog; ? still closes it)
       if (s.helpOpen) {
         if (e.key === '?') {
           e.preventDefault();
@@ -649,7 +649,7 @@ export default function App() {
         if (voiceKeys.includes(e.key)) return;
       }
 
-      // Ctrl 组合键：面向盲人用户的高频备选键位（方向键 + Ctrl + 回车）
+      // Ctrl combos: high-frequency alternative bindings for blind users (arrow keys + Ctrl + Enter)
       if (e.ctrlKey && !e.metaKey && !e.altKey) {
         const order: PlaybackMode[] = ['continuous', 'segment', 'exploration'];
         switch (e.key) {
@@ -682,13 +682,13 @@ export default function App() {
             break;
           }
         }
-        return; // 其余 Ctrl 组合不触发单键快捷键
+        return; // other Ctrl combos must not trigger single-key shortcuts
       }
 
       const exploring = s.playbackMode === 'exploration';
       const step = e.shiftKey ? 0.08 : 0.02;
 
-      // 探索指针每跨过一条网格线（0.1）就播报一次当前坐标
+      // Announce the current coordinates each time the exploration pointer crosses a grid line (0.1)
       const announceExploreCell = () => {
         const q = engine.exploration.query();
         const cx = gridCellUnits(q.x);
@@ -923,8 +923,8 @@ export default function App() {
           </button>
         </header>
 
-        {/* 图形库只在需要选图形的页面出现（播放 / 手势演奏），
-            避免其他页面按 Space 误触图形播放 */}
+        {/* The shape library appears only on views that need shape selection (Play / Hand Play),
+            so Space on other views cannot accidentally trigger shape playback */}
         <div
           className={
             state.view === 'play' || state.view === 'hand' ? 'app-layout' : 'app-layout no-library'
@@ -943,7 +943,7 @@ export default function App() {
         </div>
 
         <footer className="app-footer">
-          {/* 播放控制栏只在图形播放页出现，其他页面有各自的操作入口 */}
+          {/* The playback control bar appears only on the shape Play view; other views have their own controls */}
           {state.view === 'play' && <ControlBar />}
           <StatusBar />
         </footer>

@@ -7,8 +7,6 @@ A single voice travels along the outline of a shape: left–right position becom
 The idea came from seven months of volunteer tutoring with blind middle school students, and the design was shaped by their feedback across two rounds of testing.
 
 > 🎧 **Try it in your browser (headphones recommended):** _[live demo link — enable GitHub Pages to activate]_
->
-> 中文说明请见 [README.zh-CN.md](README.zh-CN.md)
 
 ## What it does
 

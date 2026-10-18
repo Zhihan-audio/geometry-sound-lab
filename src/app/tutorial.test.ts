@@ -65,8 +65,8 @@ const MINI_STEPS: TutorialStep[] = [
   { id: 's3', title: bi('Three'), narration: bi('All done. Press N to finish.') },
 ];
 
-describe('教学步骤数据', () => {
-  it('步骤 id 唯一且叙述完整', () => {
+describe('tutorial step data', () => {
+  it('step ids are unique and narration is complete', () => {
     const ids = TUTORIAL_STEPS.map((s) => s.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(TUTORIAL_STEPS.length).toBeGreaterThanOrEqual(10);
@@ -78,7 +78,7 @@ describe('教学步骤数据', () => {
     }
   });
 
-  it('任务定义有效', () => {
+  it('task definitions are valid', () => {
     for (const step of TUTORIAL_STEPS) {
       if (!step.task) continue;
       expect(['key', 'playback-finished', 'mode']).toContain(step.task.type);
@@ -90,12 +90,12 @@ describe('教学步骤数据', () => {
     }
   });
 
-  it('第一步是欢迎步骤且没有任务', () => {
+  it('first step is a welcome step with no task', () => {
     expect(TUTORIAL_STEPS[0].task).toBeUndefined();
     expect(TUTORIAL_STEPS[0].demo).toBeUndefined();
   });
 
-  it('包含三种任务类型（按键、播放完成、模式切换）', () => {
+  it('covers all three task types (key, playback-finished, mode switch)', () => {
     const types = TUTORIAL_STEPS.filter((s) => s.task).map((s) => s.task!.type);
     expect(types).toContain('key');
     expect(types).toContain('playback-finished');
@@ -103,8 +103,8 @@ describe('教学步骤数据', () => {
   });
 });
 
-describe('教学控制器', () => {
-  it('start 后朗读第一步', async () => {
+describe('tutorial controller', () => {
+  it('speaks the first step after start', async () => {
     const { engine } = stubEngine();
     const spoken: string[] = [];
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker(spoken) });
@@ -116,7 +116,7 @@ describe('教学控制器', () => {
     expect(c.snapshot().phase).toBe('idle-wait');
   });
 
-  it('N 前进、P 后退、H 重复，且这些键被消费', async () => {
+  it('N advances, P goes back, H repeats, and these keys are consumed', async () => {
     const { engine } = stubEngine();
     const spoken: string[] = [];
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker(spoken) });
@@ -137,7 +137,7 @@ describe('教学控制器', () => {
     expect(spoken.length).toBeGreaterThan(before);
   });
 
-  it('任务按键完成任务：播放答对音、不消费按键', async () => {
+  it('task key completes the task: plays the correct cue, does not consume the key', async () => {
     const { engine, cuesPlayed } = stubEngine();
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker([]) });
     c.start('continuous');
@@ -147,12 +147,12 @@ describe('教学控制器', () => {
     expect(c.snapshot().phase).toBe('task');
 
     const consumed = c.handleKey({ key: 'ArrowRight' }, { exploring: false, helpOpen: false });
-    expect(consumed).toBe(false); // 按键必须继续传给应用
+    expect(consumed).toBe(false); // the key must still pass through to the app
     expect(c.snapshot().taskDone).toBe(true);
     expect(cuesPlayed).toContain('correct');
   });
 
-  it('播放完成类任务由调度器 end 事件完成', async () => {
+  it('playback-finished tasks complete on the scheduler end event', async () => {
     const steps: TutorialStep[] = [
       {
         id: 'p1',
@@ -170,7 +170,7 @@ describe('教学控制器', () => {
     expect(c.snapshot().taskDone).toBe(true);
   });
 
-  it('模式切换任务由 notifyMode 完成；已在目标模式时立即完成', async () => {
+  it('mode tasks complete via notifyMode; complete immediately when already in the target mode', async () => {
     const steps: TutorialStep[] = [
       {
         id: 'm1',
@@ -187,14 +187,14 @@ describe('教学控制器', () => {
     c.notifyMode('exploration');
     expect(c.snapshot().taskDone).toBe(true);
 
-    // 已处于探索模式时进入该步骤 → 立即完成
+    // Entering this step while already in exploration mode → completes immediately
     const c2 = new TutorialController(engine, { steps, speaker: stubSpeaker([]) });
     c2.start('exploration');
     await tick();
     expect(c2.snapshot().taskDone).toBe(true);
   });
 
-  it('最后一步按 N 结束并广播 finished', async () => {
+  it('pressing N on the last step ends the tour and broadcasts finished', async () => {
     const { engine, cuesPlayed } = stubEngine();
     const events: TutorialUiEvent[] = [];
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker([]) });
@@ -205,14 +205,14 @@ describe('教学控制器', () => {
     await tick();
     c.next();
     await tick();
-    c.next(); // 最后一步 → finish
+    c.next(); // last step → finish
     await tick();
     expect(c.isActive).toBe(false);
     expect(events.some((e) => e.type === 'finished')).toBe(true);
     expect(cuesPlayed).toContain('correct');
   });
 
-  it('Escape 退出导览；探索模式或帮助打开时让位给应用', async () => {
+  it('Escape exits the tour; yields to the app while exploring or with help open', async () => {
     const { engine } = stubEngine();
     const events: TutorialUiEvent[] = [];
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker([]) });
@@ -230,7 +230,7 @@ describe('教学控制器', () => {
     expect(events.some((e) => e.type === 'exited')).toBe(true);
   });
 
-  it('未激活时不消费任何按键', () => {
+  it('consumes no keys while inactive', () => {
     const { engine } = stubEngine();
     const c = new TutorialController(engine, { steps: MINI_STEPS, speaker: stubSpeaker([]) });
     expect(c.handleKey({ key: 'n' }, { exploring: false, helpOpen: false })).toBe(false);

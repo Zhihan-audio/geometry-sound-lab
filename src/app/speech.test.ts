@@ -18,8 +18,8 @@ const v = (name: string, lang = 'en-US', localService = true): VoiceLite => ({
   voiceURI: name,
 });
 
-describe('语音质量识别', () => {
-  it('识别新奇/机械音色（不应被自动选择）', () => {
+describe('voice quality detection', () => {
+  it('detects novelty/robotic voices (should not be auto-selected)', () => {
     expect(isNoveltyVoice('Albert')).toBe(true);
     expect(isNoveltyVoice('Bubbles')).toBe(true);
     expect(isNoveltyVoice('Fred')).toBe(true);
@@ -28,7 +28,7 @@ describe('语音质量识别', () => {
     expect(isNoveltyVoice('Ava (Premium)')).toBe(false);
   });
 
-  it('Premium > Enhanced > 普通自然人声', () => {
+  it('Premium > Enhanced > plain natural voices', () => {
     const premium = scoreVoice(v('Ava (Premium)'));
     const enhanced = scoreVoice(v('Samantha (Enhanced)'));
     const plain = scoreVoice(v('Samantha'));
@@ -38,17 +38,17 @@ describe('语音质量识别', () => {
     expect(plain).toBeGreaterThan(unknown);
   });
 
-  it('en-US 优先于其他英语地区', () => {
+  it('prefers en-US over other English regions', () => {
     expect(scoreVoice(v('Daniel', 'en-GB'))).toBeLessThan(scoreVoice(v('Daniel', 'en-US')));
   });
 
-  it('非英语语音被排除', () => {
+  it('excludes non-English voices', () => {
     expect(scoreVoice(v('Ting-Ting', 'zh-CN'))).toBeLessThan(0);
   });
 });
 
-describe('自动语音选择', () => {
-  it('自动选择质量最高的语音', () => {
+describe('automatic voice selection', () => {
+  it('automatically picks the highest-quality voice', () => {
     const best = pickBestVoice([
       v('Albert'),
       v('Samantha'),
@@ -58,16 +58,16 @@ describe('自动语音选择', () => {
     expect(best?.name).toBe('Ava (Premium)');
   });
 
-  it('没有 Premium 时选 Enhanced，没有 Enhanced 时选已知自然人声', () => {
+  it('falls back to Enhanced without Premium, then to known natural voices', () => {
     expect(pickBestVoice([v('Samantha'), v('Evan (Enhanced)')])?.name).toBe('Evan (Enhanced)');
     expect(pickBestVoice([v('SomeVoice'), v('Samantha')])?.name).toBe('Samantha');
   });
 
-  it('只有新奇音色时返回 null（回退系统默认）', () => {
+  it('returns null when only novelty voices exist (falls back to system default)', () => {
     expect(pickBestVoice([v('Albert'), v('Bubbles'), v('Zarvox')])).toBeNull();
   });
 
-  it('下拉列表排除新奇音色和非英语语音，按质量排序', () => {
+  it('dropdown list excludes novelty and non-English voices, sorted by quality', () => {
     const list = filterEnglishVoices([
       v('Albert'),
       v('Ting-Ting', 'zh-CN'),
@@ -78,8 +78,8 @@ describe('自动语音选择', () => {
   });
 });
 
-describe('中文语音选择', () => {
-  it('中文界面下只提供中文语音，Premium 优先', () => {
+describe('Chinese voice selection', () => {
+  it('offers only Chinese voices in the Chinese UI, Premium first', () => {
     const voices = [
       v('Samantha'),
       v('Tingting', 'zh_CN'),
@@ -91,33 +91,33 @@ describe('中文语音选择', () => {
     expect(pickBestVoiceFor(voices, 'zh')?.name).toBe('Tingting (Premium)');
   });
 
-  it('英文语音在中文模式下得分为负（不会被选中）', () => {
+  it('scores English voices negative in Chinese mode (never selected)', () => {
     expect(scoreVoiceFor(v('Ava (Premium)'), 'zh')).toBeLessThan(0);
     expect(scoreVoiceFor(v('Tingting', 'zh_CN'), 'zh')).toBeGreaterThan(0);
   });
 
-  it('zh-CN 优先于其他中文地区', () => {
+  it('prefers zh-CN over other Chinese regions', () => {
     expect(scoreVoiceFor(v('Tingting', 'zh_CN'), 'zh')).toBeGreaterThan(
       scoreVoiceFor(v('Meijia', 'zh_TW'), 'zh'),
     );
   });
 });
 
-describe('朗读安全超时（只兜底，不抢跑）', () => {
-  it('中文按每字更长的时间估算（远长于英文）', () => {
+describe('speech safety timeout (last-resort only, never cuts in early)', () => {
+  it('estimates Chinese with more time per character (much longer than English)', () => {
     expect(speakSafetyTimeoutMs(110, 1, 'zh')).toBeGreaterThan(speakSafetyTimeoutMs(110, 1, 'en') * 2);
   });
 
-  it('110 字中文导览词的超时必须远大于真实朗读时长（约 27 秒）', () => {
+  it('timeout for a 110-character Chinese tour line far exceeds real speaking time (about 27 s)', () => {
     expect(speakSafetyTimeoutMs(110, 1, 'zh')).toBeGreaterThan(45000);
   });
 
-  it('慢速朗读时超时相应放宽', () => {
+  it('relaxes the timeout accordingly at slow speech rates', () => {
     expect(speakSafetyTimeoutMs(100, 0.6, 'zh')).toBeGreaterThan(speakSafetyTimeoutMs(100, 1, 'zh'));
   });
 
-  it('英文长句的超时也覆盖慢速朗读', () => {
-    // 300 字符英文在 0.6 倍速下约需 30 秒
+  it('timeout for long English sentences also covers slow speech', () => {
+    // 300 characters of English at 0.6x speed takes about 30 seconds
     expect(speakSafetyTimeoutMs(300, 0.6, 'en')).toBeGreaterThan(60000);
   });
 });

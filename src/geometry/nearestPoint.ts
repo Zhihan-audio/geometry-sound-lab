@@ -1,10 +1,10 @@
-// 点到线段的投影、距离与最近线段计算
+// Point-to-segment projection, distance, and nearest-segment computation
 import type { GeometryPoint, GeometryShape, Vec2 } from './geometryTypes';
 
 export interface SegmentProjection {
   point: Vec2;
   distance: number;
-  t: number; // 0..1，投影点在线段上的参数位置
+  t: number; // 0..1, parametric position of the projection on the segment
 }
 
 export function projectPointToSegment(p: Vec2, a: Vec2, b: Vec2): SegmentProjection {

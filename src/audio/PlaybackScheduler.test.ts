@@ -4,17 +4,17 @@ import { PlaybackScheduler, type SchedulerEvent, type SchedulerSettings } from '
 import type { GeometryShape } from '../geometry/geometryTypes';
 import type { CueType } from './CueSoundEngine';
 
-// 桩：记录调用，不产生真实声音
+// Stubs: record calls without producing real sound
 class StubVoice {
   calls: string[] = [];
   startVoice() {
     this.calls.push('start');
   }
   updateVoice() {
-    // 高频调用，不记录
+    // called at high frequency, not recorded
   }
   duckVoice() {
-    // 忽略
+    // ignored
   }
   stopVoice() {
     this.calls.push('stop');
@@ -41,11 +41,11 @@ function makeSettings(overrides: Partial<SchedulerSettings> = {}): () => Schedul
   return () => ({ ...base, ...overrides });
 }
 
-/** 逆时针作图的正方形，边长 0.6 */
+/** Square drawn counterclockwise, side length 0.6 */
 function square(): GeometryShape {
   return {
     id: 'sq',
-    name: '正方形',
+    name: 'Square',
     type: 'polygon',
     points: [
       { id: 'bl', x: 0.2, y: 0.2 },
@@ -67,7 +67,7 @@ function square(): GeometryShape {
 function horizontalLine(): GeometryShape {
   return {
     id: 'h',
-    name: '水平线',
+    name: 'Horizontal line',
     type: 'line',
     points: [
       { id: 'a', x: 0.1, y: 0.5 },
@@ -79,7 +79,7 @@ function horizontalLine(): GeometryShape {
   };
 }
 
-describe('播放调度器', () => {
+describe('PlaybackScheduler', () => {
   let voice: StubVoice;
   let cues: StubCues;
 
@@ -95,7 +95,7 @@ describe('播放调度器', () => {
     vi.useRealTimers();
   });
 
-  it('水平线：开始音 + 结束音，无顶点音、无闭合音', () => {
+  it('horizontal line: start + end cues, no vertex or closure cues', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     scheduler.load(horizontalLine());
     scheduler.playAll();
@@ -107,7 +107,7 @@ describe('播放调度器', () => {
     expect(scheduler.playbackStatus).toBe('stopped');
   });
 
-  it('正方形：每个顶点只触发一次提示，闭合提示只在回到起点时触发一次', () => {
+  it('square: each vertex cues exactly once, closure cues once on returning to the start', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     const events: SchedulerEvent[] = [];
     scheduler.subscribe((e) => events.push(e));
@@ -115,24 +115,24 @@ describe('播放调度器', () => {
     scheduler.playAll();
     vi.advanceTimersByTime(20000);
 
-    // 4 条边、3 个中途顶点、1 次闭合
+    // 4 edges, 3 mid-route vertices, 1 closure
     expect(cues.played.filter((c) => c === 'vertex')).toHaveLength(3);
     expect(cues.played.filter((c) => c === 'closure')).toHaveLength(1);
-    expect(cues.played.filter((c) => c === 'end')).toHaveLength(0); // 闭合图形不播普通结束音
+    expect(cues.played.filter((c) => c === 'end')).toHaveLength(0); // closed shapes skip the plain end cue
 
     const vertexEvents = events.filter((e) => e.type === 'vertex');
     expect(vertexEvents).toHaveLength(3);
     const pointIds = vertexEvents.map((e) => (e.type === 'vertex' ? e.pointId : ''));
-    expect(new Set(pointIds).size).toBe(3); // 每个顶点只触发一次
+    expect(new Set(pointIds).size).toBe(3); // each vertex fires only once
 
-    // 闭合事件在所有顶点事件之后
+    // the closure event comes after all vertex events
     const closureIdx = events.findIndex((e) => e.type === 'closure');
     const lastVertexIdx = events.map((e) => e.type).lastIndexOf('vertex');
     expect(closureIdx).toBeGreaterThan(lastVertexIdx);
     expect(scheduler.playbackStatus).toBe('stopped');
   });
 
-  it('关闭顶点提示后不播放顶点音也不停顿', () => {
+  it('with vertex cues disabled, plays no vertex sound and does not pause', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings({ vertexCueEnabled: false }));
     scheduler.load(square());
     scheduler.playAll();
@@ -141,10 +141,10 @@ describe('播放调度器', () => {
     expect(cues.played.filter((c) => c === 'closure')).toHaveLength(1);
   });
 
-  it('十字图形：两条线路依次播放，中途触发交点提示', () => {
+  it('cross shape: two paths play in turn, intersection cues fire along the way', () => {
     const cross: GeometryShape = {
       id: 'cross',
-      name: '十字',
+      name: 'Cross',
       type: 'multiline',
       points: [
         { id: 'h1', x: 0.15, y: 0.5 },
@@ -166,22 +166,22 @@ describe('播放调度器', () => {
     scheduler.playAll();
     vi.advanceTimersByTime(15000);
 
-    // 每条线经过中心各触发一次交点脉冲
+    // each line fires one intersection pulse when passing the center
     expect(cues.played.filter((c) => c === 'intersection')).toHaveLength(2);
     const pathStarts = events.filter((e) => e.type === 'pathStart');
     expect(pathStarts).toHaveLength(2);
     expect(cues.played.filter((c) => c === 'end')).toHaveLength(1);
   });
 
-  it('暂停期间不推进，恢复后完成播放', () => {
+  it('does not advance while paused, finishes playback after resume', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     scheduler.load(horizontalLine());
     scheduler.playAll();
-    vi.advanceTimersByTime(1000); // 进入第一条腿
+    vi.advanceTimersByTime(1000); // enter the first leg
     scheduler.pause();
     const snapshot = cues.played.length;
     vi.advanceTimersByTime(8000);
-    expect(cues.played.length).toBe(snapshot); // 暂停期间无新提示音
+    expect(cues.played.length).toBe(snapshot); // no new cues while paused
     expect(scheduler.playbackStatus).toBe('paused');
     scheduler.resume();
     vi.advanceTimersByTime(8000);
@@ -189,23 +189,23 @@ describe('播放调度器', () => {
     expect(cues.played.filter((c) => c === 'end')).toHaveLength(1);
   });
 
-  it('分段模式：一次只播放一条边', () => {
+  it('segment mode: plays only one edge at a time', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     scheduler.load(square());
     scheduler.playSegmentAt(0);
     vi.advanceTimersByTime(10000);
-    // 只有一条边：一个顶点提示（该边终点），没有闭合提示
+    // just one edge: one vertex cue (at the edge's endpoint), no closure cue
     expect(cues.played.filter((c) => c === 'vertex')).toHaveLength(1);
     expect(cues.played.filter((c) => c === 'closure')).toHaveLength(0);
     expect(scheduler.playbackStatus).toBe('stopped');
     expect(scheduler.currentLegIndex).toBe(0);
   });
 
-  it('循环播放：播放结束后自动重新开始', () => {
+  it('loop playback: restarts automatically after finishing', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings({ loopEnabled: true }));
     scheduler.load(horizontalLine());
     scheduler.playAll();
-    // 一轮约 350 + 2400 = 2750ms，循环间隔 800ms
+    // one pass is about 350 + 2400 = 2750ms, loop gap 800ms
     vi.advanceTimersByTime(9000);
     expect(cues.played.filter((c) => c === 'start').length).toBeGreaterThanOrEqual(2);
     expect(scheduler.playbackStatus).toBe('playing');
@@ -214,11 +214,11 @@ describe('播放调度器', () => {
   });
 });
 
-/** 平滑弧线：两端是真顶点，中间是 cue:false 采样点（共 4 条腿） */
+/** Smooth arc: real vertices at both ends, cue:false sample points in between (4 legs total) */
 function smoothArc(): GeometryShape {
   return {
     id: 'arc',
-    name: '弧线',
+    name: 'Arc',
     type: 'curve',
     smooth: true,
     points: [
@@ -239,7 +239,7 @@ function smoothArc(): GeometryShape {
   };
 }
 
-describe('逻辑边：平滑曲线在逐边模式下整段播放', () => {
+describe('logical edges: smooth curves play whole in segment mode', () => {
   let voice: StubVoice;
   let cues: StubCues;
 
@@ -255,7 +255,7 @@ describe('逻辑边：平滑曲线在逐边模式下整段播放', () => {
     vi.useRealTimers();
   });
 
-  it('平滑曲线整段算一条逻辑边，一次播到结尾不中途自停', () => {
+  it('a smooth curve counts as one logical edge, plays to the end without stopping midway', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     const events: SchedulerEvent[] = [];
     scheduler.subscribe((e) => events.push(e));
@@ -264,16 +264,16 @@ describe('逻辑边：平滑曲线在逐边模式下整段播放', () => {
     vi.advanceTimersByTime(30000);
 
     expect(scheduler.playbackStatus).toBe('stopped');
-    expect(scheduler.currentLegIndex).toBe(3); // 停在最后一条采样腿，而非第一段
+    expect(scheduler.currentLegIndex).toBe(3); // stops on the last sample leg, not the first segment
     const segEvents = events.filter((e) => e.type === 'segment');
     expect(segEvents.length).toBeGreaterThan(0);
     expect(segEvents.every((e) => e.type === 'segment' && e.total === 1)).toBe(true);
-    expect(cues.played.filter((c) => c === 'vertex')).toHaveLength(0); // 采样点不敲顶点音
+    expect(cues.played.filter((c) => c === 'vertex')).toHaveLength(0); // sample points do not strike the vertex cue
     expect(cues.played.filter((c) => c === 'end')).toHaveLength(1);
-    expect(scheduler.nextSegment()).toBe(false); // 整条曲线就是最后一条逻辑边
+    expect(scheduler.nextSegment()).toBe(false); // the whole curve is the last logical edge
   });
 
-  it('正方形仍是四条逻辑边，可继续切到下一条', () => {
+  it('a square is still four logical edges and can advance to the next one', () => {
     const scheduler = new PlaybackScheduler(voice, cues, makeSettings());
     const events: SchedulerEvent[] = [];
     scheduler.subscribe((e) => events.push(e));

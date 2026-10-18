@@ -5,7 +5,7 @@ import { StoreProvider } from './state/store';
 import { disposeEngine } from './app/engine';
 import './styles.css';
 
-// 程序退出时释放音频资源
+// Release audio resources when the app exits
 window.addEventListener('beforeunload', () => {
   disposeEngine();
 });

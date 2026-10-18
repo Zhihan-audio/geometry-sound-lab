@@ -65,7 +65,22 @@
       "Bash(python3 -c \"import docx, PIL; print\\('deps ok'\\)\")",
       "Bash(python3 -m pip install --user python-docx --quiet)",
       "Bash(gh auth *)",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('name:',p.name,'| version:',p.version,'| author:',p.author||'\\(none\\)'\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('name:',p.name,'| version:',p.version,'| author:',p.author||'\\(none\\)'\\)\")",
+      "Bash(perl -0 -ne 'print \"$_\\\\n\" if /[^\\\\x00-\\\\x7F]/')",
+      "Bash(mv \"项目报告-大学申请.html\" \"/Users/yilao/Desktop/SFK/潘祉含/作品三/\")",
+      "Bash(git rm *)",
+      "Bash(mv README.zh-CN.md \"/Users/yilao/Desktop/SFK/潘祉含/作品三/README-中文备份.md\")",
+      "Bash(rm -f \"/Users/yilao/Desktop/SFK/潘祉含/作品三/发布操作指南.md\")",
+      "Bash(perl -ne 'print \"$ARGV:$.: $_\" if /\\(\\\\/\\\\/|\\\\/\\\\*|^\\\\s*\\\\*\\).*[\\\\p{Han}]/; close ARGV if eof' src/app/tutorial.ts src/app/speech.ts src/app/sayVoices.ts src/app/adhocShapes.ts)",
+      "Bash(perl -CSD -ne 'print \"$ARGV:$.: $_\" if /\\\\p{Han}/; close ARGV if eof' src/app/tutorial.ts)",
+      "Bash(perl -CSD -ne 'print \"$ARGV:$.: $_\" if /\\\\p{Han}/; close ARGV if eof' src/app/speech.ts src/app/sayVoices.ts src/app/adhocShapes.ts src/app/actions.ts src/app/engine.ts src/app/describe.ts src/main.tsx src/app/sayVoices.test.ts src/app/speech.test.ts src/app/tutorial.test.ts)",
+      "Bash(perl -CSD -ne 'print \"$.: $_\" if /\\\\p{Han}/; close ARGV if eof' src/App.tsx)",
+      "Bash(perl -CSD -ne 'print \"$ARGV:$.: $_\" if /\\\\p{Han}/ && m{//|/\\\\*|^\\\\s*\\\\*}; close ARGV if eof' src/App.tsx src/main.tsx src/app/*.ts)",
+      "Bash(perl -CSD -ne 'print \"$ARGV:$.: $_\" if /\\\\p{Han}/ && /\\\\b\\(describe|it\\)\\\\\\(/; close ARGV if eof' src/app/*.test.ts)",
+      "Bash(grep -E '\\\\.\\(ts|tsx|mjs|cjs|md|yml|json|html\\)$')",
+      "Bash(grep -E '\\\\.\\(ts|tsx\\)$')",
+      "Bash(git add *)",
+      "Bash(git -c 'user.name=Zhihan Pan' -c user.email=laoy0610@gmail.com commit -q -m 'Translate all code comments and test names to English *)"
     ]
   }
 }

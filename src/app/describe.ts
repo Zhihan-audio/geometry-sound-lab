@@ -79,39 +79,40 @@ export function describeLeg(leg: TraversalLeg, index: number, total: number): Le
   };
 }
 
-// ---------- 以中心为原点的显示坐标系 ----------
-// 内部仍使用 0..1 归一化坐标；界面显示与语音播报统一换算为
-// “中心为原点”的网格单位（-5..+5，右正左负、上正下负）。
+// ---------- Center-origin display coordinate system ----------
+// Internally we still use 0..1 normalized coordinates; UI display and speech
+// announcements are converted to "center-origin" grid units (-5..+5,
+// right/up positive, left/down negative).
 
-/** 内部坐标 0..1 → 中心原点网格单位（-5..+5） */
+/** Internal coordinate 0..1 → center-origin grid units (-5..+5) */
 export function toUnits(v: number): number {
   return v * 10 - 5;
 }
 
-/** 中心原点网格单位 → 内部坐标 0..1 */
+/** Center-origin grid units → internal coordinate 0..1 */
 export function fromUnits(u: number): number {
   return (u + 5) / 10;
 }
 
-/** 视觉显示：整数不带小数位，否则保留一位小数（-5、-1.8、3） */
+/** Visual display: integers without decimals, otherwise one decimal place (-5, -1.8, 3) */
 export function formatUnits(v: number): string {
   const r = Math.round(toUnits(v) * 10) / 10;
   return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
 
-/** 语音播报：负号读成“负 / negative”，避免连字符被语音引擎吞掉 */
+/** Speech output: read the minus sign as "negative" so the speech engine does not swallow the hyphen */
 export function speakUnits(v: number): string {
   const s = formatUnits(v);
   if (!s.startsWith('-')) return s;
   return getLocale() === 'zh' ? `负${s.slice(1)}` : `negative ${s.slice(1)}`;
 }
 
-/** 所在网格格子的单位坐标（向下取整，-5..4），用于按格播报 */
+/** Unit coordinate of the containing grid cell (floored, -5..4), used for per-cell announcements */
 export function gridCellUnits(v: number): number {
   return Math.max(-5, Math.min(4, Math.floor(toUnits(v) + 1e-9)));
 }
 
-/** 带符号整数的语音形式 */
+/** Spoken form of a signed integer */
 export function speakSignedInt(n: number): string {
   if (n >= 0) return String(n);
   return getLocale() === 'zh' ? `负${-n}` : `negative ${-n}`;

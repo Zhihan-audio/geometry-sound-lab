@@ -1,4 +1,4 @@
-// 自定义图形数据校验：用于 JSON 导入与本地存储恢复
+// Custom shape data validation: used for JSON import and local-storage restore
 import type { GeometryPoint, GeometrySegment, GeometryShape, PlaybackDirection } from './geometryTypes';
 
 export interface ValidationResult {

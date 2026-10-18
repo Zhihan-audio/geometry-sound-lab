@@ -1,4 +1,4 @@
-// 播放调度器：让单声部声音点沿图形轮廓移动，处理顶点停顿、交点脉冲、闭合提示与循环
+// Playback scheduler: moves a single-voice sound point along the shape outline, handling vertex pauses, intersection pulses, closure cues and looping
 import type { GeometryShape, PlaybackDirection } from '../geometry/geometryTypes';
 import { buildTraversal, type TraversalLeg, type TraversalPlan } from '../geometry/traversal';
 import { findIntersections } from '../geometry/intersections';
@@ -7,7 +7,7 @@ import { segmentLength } from '../geometry/slopeAnalysis';
 import { mapPosition, xToPan, type PitchSettings } from './SonificationMapper';
 import type { CueType } from './CueSoundEngine';
 
-export const BASE_MS_PER_UNIT = 3000; // 单位距离(1.0)的基准播放时间
+export const BASE_MS_PER_UNIT = 3000; // base playback time for one unit distance (1.0)
 export const MIN_LEG_MS = 300;
 export const MAX_LEG_MS = 8000;
 export const START_DELAY_MS = 350;
@@ -18,7 +18,7 @@ export const POINT_HOLD_MS = 1200;
 export type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'stopped';
 
 export interface SchedulerSettings {
-  speed: number; // 速度倍率，1 = 正常
+  speed: number; // speed multiplier, 1 = normal
   vertexPauseMs: number; // 0..500
   vertexCueEnabled: boolean;
   intersectionCueEnabled: boolean;
@@ -38,7 +38,7 @@ export type SchedulerEvent =
   | { type: 'end' }
   | { type: 'error'; message: string };
 
-/** 主声部接口（便于测试时注入桩对象） */
+/** Main voice interface (lets tests inject stub objects) */
 export interface VoiceEngineLike {
   startVoice(frequency: number, pan: number): void;
   updateVoice(frequency: number, pan: number, glide?: number): void;
@@ -120,7 +120,7 @@ export class PlaybackScheduler {
     return this.plan;
   }
 
-  /** 加载图形（会停止当前播放）。direction 覆盖图形默认播放方向 */
+  /** Load a shape (stops current playback). direction overrides the shape's default playback direction */
   load(shape: GeometryShape, direction?: PlaybackDirection): void {
     this.stop();
     this.shape = shape;
@@ -138,7 +138,7 @@ export class PlaybackScheduler {
     }
     this.legIndex = 0;
 
-    // 预计算每条腿上的交点参数位置（交点在腿的中段才触发；端点交点由顶点处理）
+    // Precompute each leg's intersection parameter positions (only mid-leg intersections fire; endpoint intersections are handled as vertices)
     const intersections = findIntersections(shape);
     this.legIntersections = this.plan.legs.map((leg) => {
       const marks: IntersectionMark[] = [];
@@ -152,7 +152,7 @@ export class PlaybackScheduler {
       return marks;
     });
 
-    // 平滑曲线：整条路径的总长度用于分配时长
+    // Smooth curves: the whole path's total length is used to apportion duration
     this.pathLengths = this.plan.paths.map((_, pathIdx) =>
       this.plan!.legs.filter((l) => l.pathIndex === pathIdx).reduce(
         (sum, l) => sum + segmentLength(l.from, l.to),
@@ -164,15 +164,15 @@ export class PlaybackScheduler {
     this.emit({ type: 'segment', index: 0, total: this.segmentStarts.length });
   }
 
-  // ---------- 逻辑边：平滑曲线的采样接点（cue===false）不是边界 ----------
-  // 一个圆 / 一条正弦曲线 = 一条逻辑边；多边形每条边仍各算一条。
-  // 逐边模式按逻辑边播放与导航，界面计数也用逻辑边。
+  // ---------- Logical edges: smooth-curve sample joints (cue===false) are not boundaries ----------
+  // A circle / a sine curve = one logical edge; each polygon side still counts as one.
+  // Segment mode plays and navigates by logical edge, and the UI counts logical edges too.
 
   private computeSegmentStarts(): void {
     const legs = this.plan?.legs ?? [];
     this.segmentStarts = [];
     for (let i = 0; i < legs.length; i++) {
-      // 新逻辑边开始于：首条腿、换路径、或上一个接点是真正的顶点
+      // A new logical edge starts at: the first leg, a path change, or a joint that is a real vertex
       if (i === 0 || legs[i].pathIndex !== legs[i - 1].pathIndex || legs[i].from.cue !== false) {
         this.segmentStarts.push(i);
       }
@@ -199,7 +199,7 @@ export class PlaybackScheduler {
     return nextStart - 1;
   }
 
-  /** 当前逻辑边信息（供界面显示与语音描述） */
+  /** Info about the current logical edge (for UI display and spoken descriptions) */
   get currentSegment(): {
     index: number;
     total: number;
@@ -219,7 +219,7 @@ export class PlaybackScheduler {
     };
   }
 
-  /** 连续轮廓播放 */
+  /** Continuous outline playback */
   playAll(options: { speedFactor?: number } = {}): void {
     if (!this.shape || !this.plan) {
       this.emit({ type: 'error', message: 'No shape selected yet' });
@@ -245,7 +245,7 @@ export class PlaybackScheduler {
     this.startTicker();
   }
 
-  /** 单个点：起点音 → 持续音 → 结束音 */
+  /** Single point: start cue → sustained tone → end cue */
   private playPoint(): void {
     const shape = this.shape;
     if (!shape || shape.points.length === 0) {
@@ -274,7 +274,7 @@ export class PlaybackScheduler {
     this.startTicker();
   }
 
-  /** 分段学习：播放指定的一条边 */
+  /** Segment learning: play one specified edge */
   playSegmentAt(index: number): void {
     if (!this.plan || this.plan.legs.length === 0) {
       this.emit({ type: 'error', message: 'This shape has no edges to play' });
@@ -286,12 +286,12 @@ export class PlaybackScheduler {
     this.fired.clear();
     const clamped = Math.max(0, Math.min(this.plan.legs.length - 1, index));
     this.setStatus('playing');
-    // 对齐到逻辑边起点：平滑曲线从整条曲线的开头播放
+    // Align to the logical edge's start: a smooth curve plays from the head of the whole curve
     this.enterLeg(this.segmentStartOf(clamped));
     this.startTicker();
   }
 
-  /** 返回 false 表示已在边界（按逻辑边移动） */
+  /** Returns false when already at the boundary (moves by logical edge) */
   nextSegment(): boolean {
     if (!this.plan) return false;
     const end = this.segmentEndOf(this.legIndex);
@@ -378,9 +378,10 @@ export class PlaybackScheduler {
   }
 
   /**
-   * 平滑曲线段强制使用连续滑音：音阶量化会把圆弧的连续音高切成台阶状
-   * （听感"卡住"、"一段一段"），破坏曲线的几何辨识。直线与多边形的边
-   * 仍按用户设置量化。曲线采样点以 cue === false 标记。
+   * Smooth-curve legs force a continuous glide: scale quantization would chop an arc's
+   * continuous pitch into stair steps (sounding "stuck", "piece by piece") and ruin the
+   * curve's geometric identity. Straight lines and polygon edges still quantize per the
+   * user's settings. Curve sample points are marked with cue === false.
    */
   private pitchFor(leg: TraversalLeg): PitchSettings {
     const pitch = this.getSettings().pitch;
@@ -396,7 +397,7 @@ export class PlaybackScheduler {
     const len = segmentLength(leg.from, leg.to);
     const speed = Math.max(0.1, s.speed * this.speedFactor);
     if (this.shape?.smooth) {
-      // 平滑曲线：整条路径限幅后按长度比例分配
+      // Smooth curves: clamp the whole path's time, then apportion by length ratio
       const totalLen = this.pathLengths[leg.pathIndex] || len;
       const totalMs = Math.max(
         MIN_LEG_MS,
@@ -492,7 +493,7 @@ export class PlaybackScheduler {
     const junctionPan = xToPan(leg.to.x);
 
     if (this.mode === 'single') {
-      // 平滑曲线的采样点不是真正的顶点：同一条逻辑边继续播放到底
+      // Smooth-curve sample points are not real vertices: keep playing the same logical edge to its end
       if (!lastOfPath && leg.to.cue === false) {
         this.enterLeg(this.legIndex + 1);
         return;
@@ -518,7 +519,7 @@ export class PlaybackScheduler {
       return;
     }
 
-    // 连续播放模式
+    // Continuous playback mode
     if (!lastOfPath) {
       const junction = leg.to;
       if (s.vertexCueEnabled && junction.cue !== false) {
@@ -537,7 +538,7 @@ export class PlaybackScheduler {
       return;
     }
 
-    // 当前路径结束
+    // Current path finished
     if (path.closed) {
       if (s.closureCueEnabled) {
         this.cues.play('closure', junctionPan);
@@ -547,7 +548,7 @@ export class PlaybackScheduler {
 
     const isLastLeg = this.legIndex === legs.length - 1;
     if (!isLastLeg) {
-      // 还有下一条路径（例如十字的第二条线）
+      // Another path remains (e.g. the second line of a cross)
       this.voice.stopVoice(80);
       this.voiceOn = false;
       const nextIndex = this.legIndex + 1;

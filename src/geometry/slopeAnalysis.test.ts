@@ -1,45 +1,45 @@
 import { describe, expect, it } from 'vitest';
 import { classifySlope, compareLines, segmentLength, slopeOf } from './slopeAnalysis';
 
-describe('斜率计算', () => {
-  it('水平线斜率为 0', () => {
+describe('slope computation', () => {
+  it('a horizontal line has slope 0', () => {
     expect(slopeOf({ x: 0, y: 0.5 }, { x: 1, y: 0.5 })).toBe(0);
     expect(classifySlope({ x: 0, y: 0.5 }, { x: 1, y: 0.5 })).toBe('horizontal');
   });
 
-  it('竖直线斜率不存在（null）', () => {
+  it('a vertical line has no slope (null)', () => {
     expect(slopeOf({ x: 0.5, y: 0 }, { x: 0.5, y: 1 })).toBeNull();
     expect(classifySlope({ x: 0.5, y: 0 }, { x: 0.5, y: 1 })).toBe('vertical');
   });
 
-  it('正斜率判断正确', () => {
+  it('positive slopes are classified correctly', () => {
     expect(slopeOf({ x: 0, y: 0 }, { x: 1, y: 0.5 })).toBeCloseTo(0.5);
     expect(classifySlope({ x: 0, y: 0 }, { x: 1, y: 0.5 })).toBe('gentle-up');
     expect(classifySlope({ x: 0, y: 0 }, { x: 0.3, y: 0.9 })).toBe('steep-up');
   });
 
-  it('负斜率判断正确', () => {
+  it('negative slopes are classified correctly', () => {
     expect(classifySlope({ x: 0, y: 1 }, { x: 1, y: 0.5 })).toBe('gentle-down');
     expect(classifySlope({ x: 0, y: 1 }, { x: 0.2, y: 0 })).toBe('steep-down');
   });
 
-  it('线段长度正确（3-4-5 三角形）', () => {
+  it('segment length is correct (3-4-5 triangle)', () => {
     expect(segmentLength({ x: 0, y: 0 }, { x: 0.3, y: 0.4 })).toBeCloseTo(0.5);
   });
 });
 
-describe('两线比较', () => {
-  it('陡线比缓线更陡', () => {
+describe('two-line comparison', () => {
+  it('a steep line is steeper than a gentle one', () => {
     const r = compareLines(
       { x: 0.1, y: 0.4 },
-      { x: 0.9, y: 0.6 }, // 缓
+      { x: 0.9, y: 0.6 }, // gentle
       { x: 0.35, y: 0.1 },
-      { x: 0.65, y: 0.9 }, // 陡
+      { x: 0.65, y: 0.9 }, // steep
     );
     expect(r.steeper).toBe('b');
   });
 
-  it('竖直线最陡', () => {
+  it('a vertical line is the steepest', () => {
     const r = compareLines(
       { x: 0.5, y: 0 },
       { x: 0.5, y: 1 },
@@ -49,7 +49,7 @@ describe('两线比较', () => {
     expect(r.steeper).toBe('a');
   });
 
-  it('平行判断：两条水平线平行', () => {
+  it('parallel check: two horizontal lines are parallel', () => {
     const r = compareLines(
       { x: 0, y: 0.3 },
       { x: 1, y: 0.3 },
@@ -60,7 +60,7 @@ describe('两线比较', () => {
     expect(r.perpendicular).toBe(false);
   });
 
-  it('垂直判断：斜率乘积为 -1', () => {
+  it('perpendicular check: slope product is -1', () => {
     const r = compareLines(
       { x: 0, y: 0 },
       { x: 1, y: 1 },
@@ -70,7 +70,7 @@ describe('两线比较', () => {
     expect(r.perpendicular).toBe(true);
   });
 
-  it('垂直判断：水平线与竖直线垂直', () => {
+  it('perpendicular check: a horizontal and a vertical line are perpendicular', () => {
     const r = compareLines(
       { x: 0, y: 0.5 },
       { x: 1, y: 0.5 },

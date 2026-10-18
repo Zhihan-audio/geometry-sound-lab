@@ -1,4 +1,4 @@
-// 本地保存：设置、自定义图形、教学进度；数据损坏自动回退默认值
+// Local persistence: settings, custom shapes, lesson progress; corrupt data falls back to defaults
 import type { GeometryShape } from '../geometry/geometryTypes';
 import { validateShapeData } from '../geometry/shapeValidation';
 

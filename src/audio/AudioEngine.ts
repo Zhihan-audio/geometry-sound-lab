@@ -1,4 +1,4 @@
-// 音频引擎：共享 AudioContext、主声部（振荡器 + 声像 + 包络）、噪声提示、总线与音量
+// Audio engine: shared AudioContext, main voice (oscillator + pan + envelope), noise hint, buses and volume
 export type Waveform = 'sine' | 'triangle' | 'softsquare';
 
 export const WAVEFORM_LABELS: Record<Waveform, string> = {
@@ -31,7 +31,7 @@ export class AudioEngine {
 
   onError: ((message: string) => void) | null = null;
 
-  /** 创建或恢复 AudioContext；失败时返回 null 并上报错误 */
+  /** Create or resume the AudioContext; on failure returns null and reports the error */
   ensure(): AudioContext | null {
     if (this.ctx) {
       if (this.ctx.state === 'suspended') {
@@ -75,7 +75,7 @@ export class AudioEngine {
     return this.cueBus;
   }
 
-  /** 主总线（受总音量与静音控制）——乐器模式的合成器挂载点 */
+  /** Master bus (under master volume and mute control) — attach point for the instrument-mode synth */
   get masterDestination(): GainNode | null {
     return this.master;
   }
@@ -134,7 +134,7 @@ export class AudioEngine {
     }
   }
 
-  /** 启动主声部；若已在播放则平滑更新到新参数 */
+  /** Start the main voice; if already playing, glide smoothly to the new parameters */
   startVoice(frequency: number, pan: number): void {
     const ctx = this.ensure();
     if (!ctx || !this.mainBus) return;
@@ -168,7 +168,7 @@ export class AudioEngine {
 
     const now = ctx.currentTime;
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(1, now + FADE_IN_S); // 淡入避免爆音
+    gain.gain.linearRampToValueAtTime(1, now + FADE_IN_S); // fade in to avoid clicks
 
     this.voiceOsc = osc;
     this.voiceFilter = filter;
@@ -177,7 +177,7 @@ export class AudioEngine {
     this.ducked = false;
   }
 
-  /** 平滑滑动到新频率与声像 */
+  /** Glide smoothly to a new frequency and pan */
   updateVoice(frequency: number, pan: number, glide: number = GLIDE_S): void {
     if (!this.ctx || !this.voiceOsc || !this.voicePanner) return;
     const now = this.ctx.currentTime;
@@ -185,7 +185,7 @@ export class AudioEngine {
     this.voicePanner.pan.setTargetAtTime(Math.max(-1, Math.min(1, pan)), now, glide);
   }
 
-  /** 顶点停顿 / 暂停时临时压低主声部（不销毁振荡器） */
+  /** Temporarily duck the main voice during vertex pauses / pause (keeps the oscillator alive) */
   duckVoice(ducked: boolean): void {
     if (!this.ctx || !this.voiceGain) return;
     if (this.ducked === ducked) return;
@@ -210,11 +210,11 @@ export class AudioEngine {
     const now = this.ctx.currentTime;
     const fade = Math.max(0.02, fadeMs / 1000);
     gain.gain.cancelScheduledValues(now);
-    gain.gain.setTargetAtTime(0.0001, now, fade / 3); // 淡出避免爆音
+    gain.gain.setTargetAtTime(0.0001, now, fade / 3); // fade out to avoid clicks
     try {
       osc.stop(now + fade + 0.05);
     } catch {
-      // 已停止
+      // already stopped
     }
     osc.onended = () => {
       try {
@@ -223,7 +223,7 @@ export class AudioEngine {
         panner?.disconnect();
         filter?.disconnect();
       } catch {
-        // 已断开
+        // already disconnected
       }
     };
     this.voiceOsc = null;
@@ -233,10 +233,10 @@ export class AudioEngine {
     this.ducked = false;
   }
 
-  /** 主动探索模式：离开线条时的轻噪声提示 */
+  /** Active exploration mode: soft noise hint when the pointer leaves the line */
   setNoiseActive(active: boolean): void {
     if (!active) {
-      // 关闭噪声不应触发 AudioContext 的创建（清理路径可能在无音频时调用）
+      // Turning noise off must not create an AudioContext (cleanup paths may run with no audio)
       if (this.ctx && this.noiseGain) {
         this.noiseGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
       }
@@ -269,7 +269,7 @@ export class AudioEngine {
     try {
       this.noiseSource?.stop();
     } catch {
-      // 已停止
+      // already stopped
     }
     this.noiseSource = null;
     this.noiseGain = null;

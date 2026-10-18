@@ -57,8 +57,8 @@ function circleTrace(n = 128, r = 0.3): GestureSample[] {
 
 // ---------- offline processing ----------
 
-describe('轨迹清理', () => {
-  it('去除重复点，保留首尾', () => {
+describe('trace cleaning', () => {
+  it('removes duplicate points, keeps first and last', () => {
     const raw: GestureSample[] = [
       { x: 0.1, y: 0.1, t: 0 },
       { x: 0.1, y: 0.1, t: 5 },
@@ -72,11 +72,11 @@ describe('轨迹清理', () => {
     expect(cleaned[cleaned.length - 1]).toMatchObject({ x: 0.5, y: 0.5 });
   });
 
-  it('剔除瞬移尖峰（追踪抖动）', () => {
+  it('drops teleport spikes (tracking jitter)', () => {
     const raw: GestureSample[] = [
       { x: 0.1, y: 0.5, t: 0 },
       { x: 0.12, y: 0.5, t: 10 },
-      { x: 0.9, y: 0.9, t: 15 }, // 5ms 内跳 0.87 单位 → 尖峰
+      { x: 0.9, y: 0.9, t: 15 }, // jumps 0.87 grid units in 5ms → spike
       { x: 0.14, y: 0.5, t: 20 },
     ];
     const cleaned = cleanTrace(raw);
@@ -84,8 +84,8 @@ describe('轨迹清理', () => {
   });
 });
 
-describe('弧长重采样', () => {
-  it('输出点数正确且间距均匀', () => {
+describe('arc-length resampling', () => {
+  it('outputs the right point count with even spacing', () => {
     const line = walk(
       [
         [0.1, 0.5],
@@ -103,7 +103,7 @@ describe('弧长重采样', () => {
     for (const g of gaps) expect(Math.abs(g - avg)).toBeLessThan(0.005);
   });
 
-  it('同一图形快画慢画 → 空间轮廓一致（时间不同）', () => {
+  it('same shape drawn fast or slow → identical spatial outline (different timing)', () => {
     const fast = walk(SQUARE, 0.01, 4);
     const slow = walk(SQUARE, 0.01, 40);
     const rf = resampleByArcLength(fast, 32);
@@ -112,16 +112,16 @@ describe('弧长重采样', () => {
       expect(rf[i].x).toBeCloseTo(rlow[i].x, 3);
       expect(rf[i].y).toBeCloseTo(rlow[i].y, 3);
     }
-    expect(rlow[31].t).toBeGreaterThan(rf[31].t); // 手势时间被保留
+    expect(rlow[31].t).toBeGreaterThan(rf[31].t); // gesture timing is preserved
   });
 });
 
-describe('闭合检测（自由轨迹）', () => {
-  it('回到起点的方形轨迹是闭合的', () => {
+describe('closure detection (freehand traces)', () => {
+  it('a square trace returning to its start is closed', () => {
     expect(isClosedTrace(walk(SQUARE))).toBe(true);
   });
 
-  it('直线不是闭合的', () => {
+  it('a straight line is not closed', () => {
     expect(
       isClosedTrace(
         walk([
@@ -132,7 +132,7 @@ describe('闭合检测（自由轨迹）', () => {
     ).toBe(false);
   });
 
-  it('太小的回环不算闭合（最小周长）', () => {
+  it('a too-small loop does not count as closed (minimum perimeter)', () => {
     const tiny = walk(
       [
         [0.5, 0.5],
@@ -147,8 +147,8 @@ describe('闭合检测（自由轨迹）', () => {
   });
 });
 
-describe('重要点检测', () => {
-  it('直角处的转角约为 90 度', () => {
+describe('important point detection', () => {
+  it('turn angle at a right angle is about 90 degrees', () => {
     const l = resampleByArcLength(
       walk([
         [0.2, 0.2],
@@ -161,7 +161,7 @@ describe('重要点检测', () => {
     expect(Math.max(...turns)).toBeGreaterThan(1.2); // ≈ π/2
   });
 
-  it('正方形轨迹检测到 3 个内部顶点（起点顶点归为 start/end）', () => {
+  it('a square trace yields 3 interior corners (the start corner counts as start/end)', () => {
     const rs = resampleByArcLength(walk(SQUARE), 64);
     const pts = detectImportantPoints(rs);
     expect(countCorners(pts)).toBe(3);
@@ -169,12 +169,12 @@ describe('重要点检测', () => {
     expect(pts[pts.length - 1].kinds).toContain('end');
   });
 
-  it('三角形轨迹检测到 2 个内部顶点', () => {
+  it('a triangle trace yields 2 interior corners', () => {
     const rs = resampleByArcLength(walk(TRIANGLE), 64);
     expect(countCorners(detectImportantPoints(rs))).toBe(2);
   });
 
-  it('圆没有顶点，但有 Y 极值', () => {
+  it('a circle has no corners but has Y extrema', () => {
     const rs = resampleByArcLength(circleTrace(), 64);
     const pts = detectImportantPoints(rs);
     expect(countCorners(pts)).toBe(0);
@@ -186,8 +186,8 @@ describe('重要点检测', () => {
 
 // ---------- live analyzer ----------
 
-describe('实时手势分析', () => {
-  it('直线：速度为正，曲率接近 0，无转角无闭合', () => {
+describe('live gesture analysis', () => {
+  it('straight line: positive speed, near-zero curvature, no corners, no closure', () => {
     const a = new LiveGestureAnalyzer();
     let corners = 0;
     let closed = 0;
@@ -210,7 +210,7 @@ describe('实时手势分析', () => {
     expect(closed).toBe(0);
   });
 
-  it('L 形轨迹：恰好触发一次转角', () => {
+  it('L-shaped trace: fires exactly one corner event', () => {
     const a = new LiveGestureAnalyzer();
     let corners = 0;
     for (const s of walk(
@@ -227,7 +227,7 @@ describe('实时手势分析', () => {
     expect(corners).toBe(1);
   });
 
-  it('方形回环：触发 3 次转角和恰好一次闭合', () => {
+  it('square loop: fires 3 corners and exactly one closure', () => {
     const a = new LiveGestureAnalyzer();
     let corners = 0;
     let closed = 0;
@@ -240,7 +240,7 @@ describe('实时手势分析', () => {
     expect(closed).toBe(1);
   });
 
-  it('圆弧：曲率明显大于直线', () => {
+  it('arc: curvature clearly higher than a straight line', () => {
     const line = new LiveGestureAnalyzer();
     let lineMax = 0;
     for (const s of walk(
@@ -260,7 +260,7 @@ describe('实时手势分析', () => {
     expect(circleMax).toBeGreaterThan(lineMax + 0.1);
   });
 
-  it('reset 后闭合可以重新触发', () => {
+  it('closure can fire again after reset', () => {
     const a = new LiveGestureAnalyzer();
     for (const s of walk(SQUARE, 0.008)) a.push(s);
     a.reset();
@@ -272,8 +272,8 @@ describe('实时手势分析', () => {
   });
 });
 
-describe('弧长工具', () => {
-  it('总弧长正确', () => {
+describe('arc-length utilities', () => {
+  it('total arc length is correct', () => {
     expect(
       totalArcLength([
         { x: 0, y: 0, t: 0 },

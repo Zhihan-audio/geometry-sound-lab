@@ -1,4 +1,4 @@
-// 坐标 → 声音参数映射：x→声像，y→MIDI 音高→频率
+// Coordinate → sound parameter mapping: x→pan, y→MIDI pitch→frequency
 import { quantizeMidi, type ScaleId } from './ScaleQuantizer';
 
 export const DEFAULT_MIN_MIDI = 48;
@@ -9,12 +9,12 @@ export function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
-/** x: 0..1 → pan: -1..1（-1 最左，0 中间，1 最右） */
+/** x: 0..1 → pan: -1..1 (-1 far left, 0 center, 1 far right) */
 export function xToPan(x: number): number {
   return clamp01(x) * 2 - 1;
 }
 
-/** y: 0..1 → MIDI 音高（y=0 最低音，y=1 最高音） */
+/** y: 0..1 → MIDI pitch (y=0 lowest note, y=1 highest note) */
 export function yToMidi(y: number, minMidi: number, maxMidi: number): number {
   const lo = Math.min(minMidi, maxMidi);
   const hi = Math.max(minMidi, maxMidi);

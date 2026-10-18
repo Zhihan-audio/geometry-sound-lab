@@ -1,4 +1,4 @@
-// 线段交点检测
+// Segment intersection detection
 import type { GeometryShape, Vec2 } from './geometryTypes';
 
 const EPS = 1e-9;
@@ -9,8 +9,8 @@ function cross(ax: number, ay: number, bx: number, by: number): number {
 }
 
 /**
- * 两条线段的交点；平行、共线或不相交时返回 null。
- * 端点接触（T 形交点）也算相交。
+ * Intersection of two segments; returns null when parallel, collinear, or non-intersecting.
+ * Endpoint contact (a T-shaped junction) also counts as intersecting.
  */
 export function segmentIntersection(a1: Vec2, a2: Vec2, b1: Vec2, b2: Vec2): Vec2 | null {
   const d1x = a2.x - a1.x;
@@ -18,7 +18,7 @@ export function segmentIntersection(a1: Vec2, a2: Vec2, b1: Vec2, b2: Vec2): Vec
   const d2x = b2.x - b1.x;
   const d2y = b2.y - b1.y;
   const denom = cross(d1x, d1y, d2x, d2y);
-  if (Math.abs(denom) < EPS) return null; // 平行或共线
+  if (Math.abs(denom) < EPS) return null; // parallel or collinear
 
   const wx = b1.x - a1.x;
   const wy = b1.y - a1.y;
@@ -40,8 +40,8 @@ function samePoint(a: Vec2, b: Vec2): boolean {
 }
 
 /**
- * 找出图形内所有线段交点。
- * 跳过共享顶点的相邻线段；若交点恰好是两条线段的公共端点坐标（顶点连接），不算交点。
+ * Find all segment intersections within a shape.
+ * Skips adjacent segments that share a vertex; a point that is exactly an endpoint of both segments (a vertex junction) does not count.
  */
 export function findIntersections(shape: GeometryShape): IntersectionPoint[] {
   const byId = new Map(shape.points.map((p) => [p.id, p]));
@@ -57,7 +57,7 @@ export function findIntersections(shape: GeometryShape): IntersectionPoint[] {
         s1.endPointId === s2.startPointId ||
         s1.endPointId === s2.endPointId
       ) {
-        continue; // 相邻线段共享顶点
+        continue; // adjacent segments share a vertex
       }
       const a1 = byId.get(s1.startPointId);
       const a2 = byId.get(s1.endPointId);
@@ -68,7 +68,7 @@ export function findIntersections(shape: GeometryShape): IntersectionPoint[] {
       const pt = segmentIntersection(a1, a2, b1, b2);
       if (!pt) continue;
 
-      // 交点是两条线段各自的端点（坐标重合的顶点连接）→ 不算交点
+      // The point is an endpoint of both segments (coincident vertex junction) → not an intersection
       const isEndpointOf1 = samePoint(pt, a1) || samePoint(pt, a2);
       const isEndpointOf2 = samePoint(pt, b1) || samePoint(pt, b2);
       if (isEndpointOf1 && isEndpointOf2) continue;
