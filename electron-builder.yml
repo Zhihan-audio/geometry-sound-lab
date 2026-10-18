@@ -1,0 +1,29 @@
+appId: com.geometrysoundlab.app
+productName: Geometry Sound Lab
+directories:
+  output: release
+afterPack: scripts/afterPackMacSign.cjs
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+mac:
+  category: public.app-category.education
+  identity: null
+  extendInfo:
+    NSCameraUsageDescription: Hand Play uses the camera to track your hand and turn its movement into sound.
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64]
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
